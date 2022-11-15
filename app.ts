@@ -1,9 +1,16 @@
-import Rx from 'rx';
-
+import {
+    animationFrames, combineLatest,
+    distinctUntilChanged,
+    fromEvent,
+    merge,
+    sampleTime,
+    scan,
+    Subject, withLatestFrom
+} from 'rxjs';
 
 /* Graphics */
 
-const canvas = document.getElementById('stage');
+const canvas = document.getElementById('stage') as HTMLCanvasElement;
 const context = canvas.getContext('2d');
 context.fillStyle = 'pink';
 
@@ -20,7 +27,7 @@ const BRICK_GAP = 3;
 function drawTitle() {
     context.textAlign = 'center';
     context.font = '24px Courier New';
-    context.fillText('rxjs breakout', canvas.width / 2, canvas.height / 2 - 24);
+    context.fillText('rxjs pong', canvas.width / 2, canvas.height / 2 - 24);
 }
 
 function drawControls() {
@@ -39,7 +46,7 @@ function drawGameOver(text) {
 function drawAuthor() {
     context.textAlign = 'center';
     context.font = '16px Courier New';
-    context.fillText('by Manuel Wieser', canvas.width / 2, canvas.height / 2 + 24);
+    context.fillText('for XTIASO rxjs workshop', canvas.width / 2, canvas.height / 2 + 24);
 }
 
 function drawScore(score) {
@@ -86,9 +93,9 @@ function drawBricks(bricks) {
 
 /* Sounds */
 
-const audio = new (window.AudioContext || window.webkitAudioContext)();
-const beeper = new Rx.Subject();
-beeper.sample(100).subscribe((key) => {
+const audio = new window.AudioContext();
+const beeper = new Subject();
+beeper.pipe(sampleTime(100)).subscribe((key: number) => {
 
     let oscillator = audio.createOscillator();
     oscillator.connect(audio.destination);
@@ -104,35 +111,21 @@ beeper.sample(100).subscribe((key) => {
 
 
 /* Ticker */
-
 const TICKER_INTERVAL = 17;
-
-const ticker$ = Rx.Observable
-    .interval(TICKER_INTERVAL, Rx.Scheduler.requestAnimationFrame)
-    .map(() => ({
-        time: Date.now(),
-        deltaTime: null
-    }))
-    .scan(
-        (previous, current) => ({
-            time: current.time,
-            deltaTime: (current.time - previous.time) / 1000
-        })
-    );
+const ticker$ = animationFrames();
 
 
 /* Paddle */
 
 const PADDLE_SPEED = 240;
 const PADDLE_KEYS = {
-    left: 37,
-    right: 39
+    left: '<',
+    right: '>'
 };
 
-const input$ = Rx.Observable
-    .merge(
-        Rx.Observable.fromEvent(document, 'keydown', event => {
-            switch (event.keyCode) {
+const input$ = merge(
+        fromEvent(document, 'keydown', event => {
+            switch ((event as KeyboardEvent).key) {
                 case PADDLE_KEYS.left:
                     return -1;
                 case PADDLE_KEYS.right:
@@ -140,20 +133,21 @@ const input$ = Rx.Observable
                 default:
                     return 0;
             }
-        }),
-        Rx.Observable.fromEvent(document, 'keyup', event => 0)
+        })
+    ,fromEvent(document, 'keyup', _ => 0)
     )
-    .distinctUntilChanged();
+    .pipe(distinctUntilChanged());
 
 const paddle$ = ticker$
-    .withLatestFrom(input$)
-    .scan((position, [ticker, direction]) => {
+    .pipe(
+    withLatestFrom(input$),
+    scan((position, [ticker, direction]) => {
 
-        let next = position + direction * ticker.deltaTime * PADDLE_SPEED;
+        let next = position + direction * ticker.elapsed * PADDLE_SPEED;
         return Math.max(Math.min(next, canvas.width - PADDLE_WIDTH / 2), PADDLE_WIDTH / 2);
 
-    }, canvas.width / 2)
-    .distinctUntilChanged();
+    }, canvas.width / 2),
+    distinctUntilChanged());
 
 
 /* Ball */
@@ -170,6 +164,13 @@ const INITIAL_OBJECTS = {
             y: 2
         }
     },
+    collisions: {
+        paddle: false,
+        floor: false,
+        wall: false,
+        ceiling: false,
+        brick: false
+    },
     bricks: factory(),
     score: 0
 };
@@ -181,8 +182,9 @@ function hit(paddle, ball) {
 }
 
 const objects$ = ticker$
-    .withLatestFrom(paddle$)
-    .scan(({ball, bricks, collisions, score}, [ticker, paddle]) => {
+    .pipe(
+    withLatestFrom(paddle$),
+    scan(({ball, bricks, collisions, score}, [ticker, paddle]) => {
 
         let survivors = [];
         collisions = {
@@ -193,8 +195,8 @@ const objects$ = ticker$
             brick: false
         };
 
-        ball.position.x = ball.position.x + ball.direction.x * ticker.deltaTime * BALL_SPEED;
-        ball.position.y = ball.position.y + ball.direction.y * ticker.deltaTime * BALL_SPEED;
+        ball.position.x = ball.position.x + ball.direction.x * ticker.elapsed * BALL_SPEED;
+        ball.position.y = ball.position.y + ball.direction.y * ticker.elapsed * BALL_SPEED;
 
         bricks.forEach((brick) => {
             if (!collision(brick, ball)) {
@@ -219,13 +221,14 @@ const objects$ = ticker$
         }
 
         return {
-            ball: ball,
+            ball,
             bricks: survivors,
-            collisions: collisions,
-            score: score
+            kl: 2,
+            collisions,
+            score
         };
 
-    }, INITIAL_OBJECTS);
+    }, INITIAL_OBJECTS));
 
 
 /* Bricks */
@@ -262,7 +265,7 @@ drawTitle();
 drawControls();
 drawAuthor();
 
-function update([ticker, paddle, objects]) {
+function update([_, paddle, objects]) {
 
     context.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -272,24 +275,23 @@ function update([ticker, paddle, objects]) {
     drawScore(objects.score);
 
     if (objects.ball.position.y > canvas.height - BALL_RADIUS) {
-        beeper.onNext(28);
+        beeper.next(28);
         drawGameOver('GAME OVER');
-        game.dispose();
+        game.unsubscribe();
     }
 
     if (!objects.bricks.length) {
-        beeper.onNext(52);
+        beeper.next(52);
         drawGameOver('CONGRATULATIONS');
-        game.dispose();
+        game.unsubscribe();
     }
 
-    if (objects.collisions.paddle) beeper.onNext(40);
-    if (objects.collisions.wall || objects.collisions.ceiling) beeper.onNext(45);
-    if (objects.collisions.brick) beeper.onNext(47 + Math.floor(objects.ball.position.y % 12));
+    if (objects.collisions.paddle) beeper.next(40);
+    if (objects.collisions.wall || objects.collisions.ceiling) beeper.next(45);
+    if (objects.collisions.brick) beeper.next(47 + Math.floor(objects.ball.position.y % 12));
 
 }
 
-const game = Rx.Observable
-    .combineLatest(ticker$, paddle$, objects$)
-    .sample(TICKER_INTERVAL)
+const game = combineLatest([ticker$, paddle$, objects$])
+    .pipe(sampleTime(TICKER_INTERVAL))
     .subscribe(update);
