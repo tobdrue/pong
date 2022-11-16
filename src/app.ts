@@ -5,13 +5,18 @@ import {
     merge,
     sampleTime,
     scan,
-    Subject, withLatestFrom
-} from 'rxjs';
+    Subject,
+    withLatestFrom
+} from "rxjs";
+
+type Brick = { x: number, y: number, width: number, height: number };
+type Ball = {position: {x: number, y: number}, direction: {x: number, y: number}};
+type Collisions = { paddle: boolean, floor: boolean, wall: boolean, ceiling: boolean, brick: boolean };
 
 /* Graphics */
 
 const canvas = document.getElementById('stage') as HTMLCanvasElement;
-const context = canvas.getContext('2d');
+const context = canvas.getContext('2d')!;
 context.fillStyle = 'pink';
 
 const PADDLE_WIDTH = 100;
@@ -171,7 +176,7 @@ const INITIAL_OBJECTS = {
         ceiling: false,
         brick: false
     },
-    bricks: factory(),
+    bricks: bricksFactory(),
     score: 0
 };
 
@@ -184,58 +189,61 @@ function hit(paddle, ball) {
 const objects$ = ticker$
     .pipe(
     withLatestFrom(paddle$),
-    scan(({ball, bricks, collisions, score}, [ticker, paddle]) => {
+        scan((
+            {ball, bricks, collisions, score}: { ball: Ball, bricks: Brick[], collisions: Collisions, score: number },
+            [ticker, paddle]
+        ) => {
 
-        let survivors = [];
-        collisions = {
-            paddle: false,
-            floor: false,
-            wall: false,
-            ceiling: false,
-            brick: false
-        };
+            let survivors: Brick[] = [];
+            collisions = {
+                paddle: false,
+                floor: false,
+                wall: false,
+                ceiling: false,
+                brick: false
+            };
 
-        ball.position.x = ball.position.x + ball.direction.x * ticker.elapsed * BALL_SPEED;
-        ball.position.y = ball.position.y + ball.direction.y * ticker.elapsed * BALL_SPEED;
+            ball.position.x = ball.position.x + ball.direction.x * ticker.elapsed * BALL_SPEED;
+            ball.position.y = ball.position.y + ball.direction.y * ticker.elapsed * BALL_SPEED;
 
-        bricks.forEach((brick) => {
-            if (!collision(brick, ball)) {
-                survivors.push(brick);
-            } else {
-                collisions.brick = true;
-                score = score + 10;
+            bricks.forEach((brick) => {
+                if (!collision(brick, ball)) {
+                    survivors.push(brick);
+                } else {
+                    collisions.brick = true;
+                    score = score + 10;
+                }
+            });
+
+            collisions.paddle = hit(paddle, ball);
+
+            if (ball.position.x < BALL_RADIUS || ball.position.x > canvas.width - BALL_RADIUS) {
+                ball.direction.x = -ball.direction.x;
+                collisions.wall = true;
             }
-        });
 
-        collisions.paddle = hit(paddle, ball);
+            collisions.ceiling = ball.position.y < BALL_RADIUS;
 
-        if (ball.position.x < BALL_RADIUS || ball.position.x > canvas.width - BALL_RADIUS) {
-            ball.direction.x = -ball.direction.x;
-            collisions.wall = true;
-        }
+            if (collisions.brick || collisions.paddle || collisions.ceiling) {
+                ball.direction.y = -ball.direction.y;
+            }
 
-        collisions.ceiling = ball.position.y < BALL_RADIUS;
+            return {
+                ball,
+                bricks: survivors,
+                kl: 2,
+                collisions,
+                score
+            };
 
-        if (collisions.brick || collisions.paddle || collisions.ceiling ) {
-            ball.direction.y = -ball.direction.y;
-        }
-
-        return {
-            ball,
-            bricks: survivors,
-            kl: 2,
-            collisions,
-            score
-        };
-
-    }, INITIAL_OBJECTS));
+        }, INITIAL_OBJECTS));
 
 
 /* Bricks */
 
-function factory() {
+function bricksFactory(): Brick[] {
     let width = (canvas.width - BRICK_GAP - BRICK_GAP * BRICK_COLUMNS) / BRICK_COLUMNS;
-    let bricks = [];
+    let bricks: Brick[] = [];
 
     for (let i = 0; i < BRICK_ROWS; i++) {
         for (let j = 0; j < BRICK_COLUMNS; j++) {

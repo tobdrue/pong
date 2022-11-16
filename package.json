@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "RxJS Pong Implementation",
   "scripts": {
-    "start": "budo app.ts:index.js --live --open -- -t [ babelify --presets [ es2015 ] ] -p [ tsify --sourceMap=true -p app.ts ]"
+    "start": "budo src/app.ts:index.js --live --open -- -t [ babelify --presets [ es2015 ] ] -p [ tsify ]"
   },
   "author": {
     "name": "Peter Benko, Tobias Drüeke",
@@ -15,7 +15,8 @@
     "babelify": "^7.3.0",
     "browserify": "^13.3.0",
     "budo": "^8.4.0",
-    "tsify": "^5.0.4"
+    "tsify": "^5.0.4",
+    "typescript": "^4.9.3"
   },
   "dependencies": {
     "@babel/preset-env": "^7.19.4",
