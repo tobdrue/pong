@@ -9,7 +9,6 @@ import {
     withLatestFrom
 } from "rxjs";
 
-type Brick = { x: number, y: number, width: number, height: number };
 type Ball = {position: {x: number, y: number}, direction: {x: number, y: number}};
 type Collisions = { paddle: boolean, floor: boolean, wall: boolean, ceiling: boolean, brick: boolean };
 
@@ -23,11 +22,6 @@ const PADDLE_WIDTH = 100;
 const PADDLE_HEIGHT = 20;
 
 const BALL_RADIUS = 10;
-
-const BRICK_ROWS = 5;
-const BRICK_COLUMNS = 7;
-const BRICK_HEIGHT = 20;
-const BRICK_GAP = 3;
 
 function drawTitle() {
     context.textAlign = 'center';
@@ -57,7 +51,7 @@ function drawAuthor() {
 function drawScore(score) {
     context.textAlign = 'left';
     context.font = '16px Courier New';
-    context.fillText(score, BRICK_GAP, 16);
+    context.fillText(score, 3, 16);
 }
 
 function drawPaddle(position) {
@@ -176,7 +170,6 @@ const INITIAL_OBJECTS = {
         ceiling: false,
         brick: false
     },
-    bricks: bricksFactory(),
     score: 0
 };
 
@@ -190,11 +183,9 @@ const objects$ = ticker$
     .pipe(
     withLatestFrom(paddle$),
         scan((
-            {ball, bricks, collisions, score}: { ball: Ball, bricks: Brick[], collisions: Collisions, score: number },
+            {ball, collisions, score}: { ball: Ball, collisions: Collisions, score: number },
             [ticker, paddle]
         ) => {
-
-            let survivors: Brick[] = [];
             collisions = {
                 paddle: false,
                 floor: false,
@@ -205,15 +196,6 @@ const objects$ = ticker$
 
             ball.position.x = ball.position.x + ball.direction.x * ticker.elapsed * BALL_SPEED;
             ball.position.y = ball.position.y + ball.direction.y * ticker.elapsed * BALL_SPEED;
-
-            bricks.forEach((brick) => {
-                if (!collision(brick, ball)) {
-                    survivors.push(brick);
-                } else {
-                    collisions.brick = true;
-                    score = score + 10;
-                }
-            });
 
             collisions.paddle = hit(paddle, ball);
 
@@ -230,42 +212,12 @@ const objects$ = ticker$
 
             return {
                 ball,
-                bricks: survivors,
                 kl: 2,
                 collisions,
                 score
             };
 
         }, INITIAL_OBJECTS));
-
-
-/* Bricks */
-
-function bricksFactory(): Brick[] {
-    let width = (canvas.width - BRICK_GAP - BRICK_GAP * BRICK_COLUMNS) / BRICK_COLUMNS;
-    let bricks: Brick[] = [];
-
-    for (let i = 0; i < BRICK_ROWS; i++) {
-        for (let j = 0; j < BRICK_COLUMNS; j++) {
-            bricks.push({
-                x: j * (width + BRICK_GAP) + width / 2 + BRICK_GAP,
-                y: i * (BRICK_HEIGHT + BRICK_GAP) + BRICK_HEIGHT / 2 + BRICK_GAP + 20,
-                width: width,
-                height: BRICK_HEIGHT
-            });
-        }
-    }
-
-    return bricks;
-}
-
-function collision(brick, ball) {
-    return ball.position.x + ball.direction.x > brick.x - brick.width / 2
-        && ball.position.x + ball.direction.x < brick.x + brick.width / 2
-        && ball.position.y + ball.direction.y > brick.y - brick.height / 2
-        && ball.position.y + ball.direction.y < brick.y + brick.height / 2;
-}
-
 
 /* Game */
 
