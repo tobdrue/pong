@@ -162,7 +162,8 @@ function update([_, paddle, objects]) {
 
     context.clearRect(0, 0, canvas.width, canvas.height);
 
-    drawPaddle(paddle);
+    drawPaddle(paddle, 1);
+    drawPaddle(paddle, 2);
     drawBall(objects.ball);
     drawScore(objects.score);
 

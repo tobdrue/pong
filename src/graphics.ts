@@ -4,8 +4,8 @@ export const canvas = document.getElementById('stage') as HTMLCanvasElement;
 export const context = canvas.getContext('2d')!;
 context.fillStyle = 'blue';
 
-export const PADDLE_WIDTH = 100;
-export const PADDLE_HEIGHT = 20;
+export const PADDLE_WIDTH = 10;
+export const PADDLE_HEIGHT = 50;
 
 export const BALL_RADIUS = 10;
 
@@ -40,11 +40,11 @@ export function drawScore(score) {
     context.fillText(score, 3, 16);
 }
 
-export function drawPaddle(position) {
+export function drawPaddle(position, player: 1|2) {
     context.beginPath();
     context.rect(
-        position - PADDLE_WIDTH / 2,
-        context.canvas.height - PADDLE_HEIGHT,
+        player === 1 ? 0 : context.canvas.width - PADDLE_WIDTH,
+        position - PADDLE_HEIGHT / 2,
         PADDLE_WIDTH,
         PADDLE_HEIGHT
     );
