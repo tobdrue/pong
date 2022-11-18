@@ -73,23 +73,6 @@ function drawBall(ball) {
     context.closePath();
 }
 
-function drawBrick(brick) {
-    context.beginPath();
-    context.rect(
-        brick.x - brick.width / 2,
-        brick.y - brick.height / 2,
-        brick.width,
-        brick.height
-    );
-    context.fill();
-    context.closePath();
-}
-
-function drawBricks(bricks) {
-    bricks.forEach((brick) => drawBrick(brick));
-}
-
-
 /* Sounds */
 
 const audio = new window.AudioContext();
@@ -231,7 +214,6 @@ function update([_, paddle, objects]) {
 
     drawPaddle(paddle);
     drawBall(objects.ball);
-    drawBricks(objects.bricks);
     drawScore(objects.score);
 
     if (objects.ball.position.y > canvas.height - BALL_RADIUS) {
