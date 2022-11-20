@@ -9,19 +9,24 @@ import {
     withLatestFrom
 } from "rxjs";
 import {
+    drawAuthor, drawBall,
+    drawControls, drawField,
+    drawPaddle,
+    drawScore,
+    drawTitle
+} from "./graphics";
+import {
     BALL_RADIUS,
     canvas,
     context,
-    drawAuthor, drawBall,
-    drawControls,
-    drawGameOver,
-    drawPaddle,
-    drawScore,
-    drawTitle, PADDLE_HEIGHT, PADDLE_WIDTH
-} from "./graphics";
+    INITIAL_OBJECTS,
+    PADDLE_HEIGHT,
+    PADDLE_WIDTH,
+    TICKER_INTERVAL
+} from "./game-config";
 
 type Ball = {position: {x: number, y: number}, direction: {x: number, y: number}};
-type Collisions = { paddle: boolean, floor: boolean, wall: boolean, ceiling: boolean, brick: boolean };
+type Collisions = { paddle: boolean, floor: boolean, wall: boolean, ceiling: boolean };
 
 /* Sounds */
 
@@ -43,9 +48,7 @@ beeper.pipe(sampleTime(100)).subscribe((key: number) => {
 
 
 /* Ticker */
-const TICKER_INTERVAL = 17;
 const ticker$ = animationFrames();
-
 
 /* Paddle */
 
@@ -76,36 +79,15 @@ const paddle$ = ticker$
     scan((position, [ticker, direction]) => {
 
         let next = position + direction * ticker.elapsed * PADDLE_SPEED;
-        return Math.max(Math.min(next, canvas.width - PADDLE_WIDTH / 2), PADDLE_WIDTH / 2);
+        return Math.max(Math.min(next, canvas.height - PADDLE_HEIGHT / 2), PADDLE_HEIGHT / 2);
 
-    }, canvas.width / 2),
+    }, canvas.height / 2),
     distinctUntilChanged());
 
 
 /* Ball */
 
-const BALL_SPEED = 60;
-const INITIAL_OBJECTS = {
-    ball: {
-        position: {
-            x: canvas.width / 2,
-            y: canvas.height / 2
-        },
-        direction: {
-            x: 2,
-            y: 2
-        }
-    },
-    collisions: {
-        paddle: false,
-        floor: false,
-        wall: false,
-        ceiling: false,
-        brick: false
-    },
-    score: 0
-};
-
+// TODO new calc
 function hit(paddle, ball) {
     return ball.position.x > paddle - PADDLE_WIDTH / 2
         && ball.position.x < paddle + PADDLE_WIDTH / 2
@@ -116,36 +98,34 @@ const objects$ = ticker$
     .pipe(
     withLatestFrom(paddle$),
         scan((
-            {ball, collisions, score}: { ball: Ball, collisions: Collisions, score: number },
+            {ball, collisions, score}: { ball: Ball, collisions: Collisions, score: { player1: number, player2: number } },
             [ticker, paddle]
         ) => {
             collisions = {
                 paddle: false,
                 floor: false,
                 wall: false,
-                ceiling: false,
-                brick: false
+                ceiling: false
             };
 
-            ball.position.x = ball.position.x + ball.direction.x * ticker.elapsed * BALL_SPEED;
-            ball.position.y = ball.position.y + ball.direction.y * ticker.elapsed * BALL_SPEED;
-
-            collisions.paddle = hit(paddle, ball);
-
-            if (ball.position.x < BALL_RADIUS || ball.position.x > canvas.width - BALL_RADIUS) {
-                ball.direction.x = -ball.direction.x;
-                collisions.wall = true;
-            }
-
-            collisions.ceiling = ball.position.y < BALL_RADIUS;
-
-            if (collisions.brick || collisions.paddle || collisions.ceiling) {
-                ball.direction.y = -ball.direction.y;
-            }
+            // ball.position.x = ball.position.x + ball.direction.x * ticker.elapsed * BALL_SPEED;
+            // ball.position.y = ball.position.y + ball.direction.y * ticker.elapsed * BALL_SPEED;
+            //
+            // collisions.paddle = hit(paddle, ball);
+            //
+            // if (ball.position.y < BALL_RADIUS || ball.position.x > canvas.height - BALL_RADIUS) {
+            //     ball.direction.y = -ball.direction.y;
+            //     collisions.wall = true;
+            // }
+            //
+            // collisions.ceiling = ball.position.y < BALL_RADIUS;
+            //
+            // if (collisions.paddle || collisions.ceiling) {
+            //     ball.direction.y = -ball.direction.y;
+            // }
 
             return {
                 ball,
-                kl: 2,
                 collisions,
                 score
             };
@@ -153,7 +133,6 @@ const objects$ = ticker$
         }, INITIAL_OBJECTS));
 
 /* Game */
-
 drawTitle();
 drawControls();
 drawAuthor();
@@ -166,22 +145,17 @@ function update([_, paddle, objects]) {
     drawPaddle(paddle, 2);
     drawBall(objects.ball);
     drawScore(objects.score);
+    drawField();
 
-    if (objects.ball.position.y > canvas.height - BALL_RADIUS) {
-        beeper.next(28);
-        drawGameOver('GAME OVER');
-        game.unsubscribe();
-    }
 
-    if (!objects.bricks.length) {
-        beeper.next(52);
-        drawGameOver('CONGRATULATIONS');
-        game.unsubscribe();
-    }
-
-    if (objects.collisions.paddle) beeper.next(40);
-    if (objects.collisions.wall || objects.collisions.ceiling) beeper.next(45);
-    if (objects.collisions.brick) beeper.next(47 + Math.floor(objects.ball.position.y % 12));
+    // if (objects.score.player1 === 5 || objects.score.player2 === 5) {
+    //     beeper.next(52);
+    //     drawGameOver('CONGRATULATIONS');
+    //     game.unsubscribe();
+    // }
+    //
+    // if (objects.collisions.paddle) beeper.next(40);
+    // if (objects.collisions.wall || objects.collisions.ceiling) beeper.next(45);
 
 }
 

@@ -1,13 +1,6 @@
 /* Graphics */
+import {BALL_RADIUS, canvas, context, PADDLE_HEIGHT, PADDLE_WIDTH} from "./game-config";
 
-export const canvas = document.getElementById('stage') as HTMLCanvasElement;
-export const context = canvas.getContext('2d')!;
-context.fillStyle = 'blue';
-
-export const PADDLE_WIDTH = 10;
-export const PADDLE_HEIGHT = 50;
-
-export const BALL_RADIUS = 10;
 
 export function drawTitle() {
     context.textAlign = 'center';
@@ -21,13 +14,6 @@ export function drawControls() {
     context.fillText('press [<] and [>] to play', canvas.width / 2, canvas.height / 2);
 }
 
-export function drawGameOver(text) {
-    context.clearRect(canvas.width / 4, canvas.height / 3, canvas.width / 2, canvas.height / 3);
-    context.textAlign = 'center';
-    context.font = '24px Courier New';
-    context.fillText(text, canvas.width / 2, canvas.height / 2);
-}
-
 export function drawAuthor() {
     context.textAlign = 'center';
     context.font = '16px Courier New';
@@ -37,10 +23,11 @@ export function drawAuthor() {
 export function drawScore(score) {
     context.textAlign = 'left';
     context.font = '16px Courier New';
-    context.fillText(score, 3, 16);
+    context.fillText(score.player1, 3, 16);
+    context.fillText(score.player2, canvas.width - 13, 16);
 }
 
-export function drawPaddle(position, player: 1|2) {
+export function drawPaddle(position, player: 1 | 2) {
     context.beginPath();
     context.rect(
         player === 1 ? 0 : context.canvas.width - PADDLE_WIDTH,
@@ -50,6 +37,28 @@ export function drawPaddle(position, player: 1|2) {
     );
     context.fill();
     context.closePath();
+}
+
+export function drawField() {
+    context.beginPath();
+    context.rect(20, 6, canvas.width - 40, 5
+    );
+    context.fill();
+    context.closePath();
+
+    context.beginPath();
+    context.rect(5, canvas.height - 11, canvas.width - 10, 5
+    );
+    context.fill();
+    context.closePath();
+
+    for (let i = 6; i < canvas.height - 16; i+= 25){
+        context.beginPath();
+        context.rect(canvas.width/2 - 1, i, 2, 15
+        );
+        context.fill();
+        context.closePath();
+    }
 }
 
 export function drawBall(ball) {
