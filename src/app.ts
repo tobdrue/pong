@@ -24,6 +24,7 @@ import {
     PADDLE_WIDTH,
     TICKER_INTERVAL
 } from "./game-config";
+import {Player} from "./player";
 
 type Ball = {position: {x: number, y: number}, direction: {x: number, y: number}};
 type Collisions = { paddle: boolean, floor: boolean, wall: boolean, ceiling: boolean };
@@ -48,41 +49,12 @@ beeper.pipe(sampleTime(100)).subscribe((key: number) => {
 
 
 /* Ticker */
-const ticker$ = animationFrames();
+export const ticker$ = animationFrames();
 
-/* Paddle */
+/* Player */
+const player1 = new Player('w', 's');
+const player2 = new Player('ArrowUp', 'ArrowDown');
 
-const PADDLE_SPEED = 240;
-const PADDLE_KEYS = {
-    left: '<',
-    right: '>'
-};
-
-const input$ = merge(
-        fromEvent(document, 'keydown', event => {
-            switch ((event as KeyboardEvent).key) {
-                case PADDLE_KEYS.left:
-                    return -1;
-                case PADDLE_KEYS.right:
-                    return 1;
-                default:
-                    return 0;
-            }
-        })
-    ,fromEvent(document, 'keyup', _ => 0)
-    )
-    .pipe(distinctUntilChanged());
-
-const paddle$ = ticker$
-    .pipe(
-    withLatestFrom(input$),
-    scan((position, [ticker, direction]) => {
-
-        let next = position + direction * ticker.elapsed * PADDLE_SPEED;
-        return Math.max(Math.min(next, canvas.height - PADDLE_HEIGHT / 2), PADDLE_HEIGHT / 2);
-
-    }, canvas.height / 2),
-    distinctUntilChanged());
 
 
 /* Ball */
@@ -96,10 +68,10 @@ function hit(paddle, ball) {
 
 const objects$ = ticker$
     .pipe(
-    withLatestFrom(paddle$),
+    withLatestFrom(player1.paddle$, player2.paddle$),
         scan((
             {ball, collisions, score}: { ball: Ball, collisions: Collisions, score: { player1: number, player2: number } },
-            [ticker, paddle]
+            [ticker, player1, player2]
         ) => {
             collisions = {
                 paddle: false,
@@ -132,17 +104,19 @@ const objects$ = ticker$
 
         }, INITIAL_OBJECTS));
 
-/* Game */
+/* Welcome */
 drawTitle();
 drawControls();
 drawAuthor();
 
-function update([_, paddle, objects]) {
 
+/* Game */
+function update([_, paddleLeft, paddleRight, objects]) {
+
+    // Redraw game
     context.clearRect(0, 0, canvas.width, canvas.height);
-
-    drawPaddle(paddle, 1);
-    drawPaddle(paddle, 2);
+    drawPaddle(paddleLeft, 1);
+    drawPaddle(paddleRight, 2);
     drawBall(objects.ball);
     drawScore(objects.score);
     drawField();
@@ -159,6 +133,6 @@ function update([_, paddle, objects]) {
 
 }
 
-const game = combineLatest([ticker$, paddle$, objects$])
+const game = combineLatest([ticker$, player1.paddle$, player2.paddle$, objects$])
     .pipe(sampleTime(TICKER_INTERVAL))
     .subscribe(update);
