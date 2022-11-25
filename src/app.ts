@@ -16,7 +16,7 @@ import {
     drawTitle
 } from "./graphics";
 import {
-    BALL_RADIUS,
+    BALL_RADIUS, BALL_SPEED,
     canvas,
     context,
     INITIAL_OBJECTS,
@@ -80,9 +80,9 @@ const objects$ = ticker$
                 ceiling: false
             };
 
-            // ball.position.x = ball.position.x + ball.direction.x * ticker.elapsed * BALL_SPEED;
-            // ball.position.y = ball.position.y + ball.direction.y * ticker.elapsed * BALL_SPEED;
-            //
+            ball.position.x = ball.position.x + ball.direction.x * timeSinceLastFrameInSec(ticker) * BALL_SPEED;
+            ball.position.y = ball.position.y + ball.direction.y * timeSinceLastFrameInSec(ticker) * BALL_SPEED;
+
             // collisions.paddle = hit(paddle, ball);
             //
             // if (ball.position.y < BALL_RADIUS || ball.position.x > canvas.height - BALL_RADIUS) {
@@ -136,3 +136,6 @@ function update([_, paddleLeft, paddleRight, objects]) {
 const game = combineLatest([ticker$, player1.paddle$, player2.paddle$, objects$])
     .pipe(sampleTime(TICKER_INTERVAL))
     .subscribe(update);
+
+
+export const timeSinceLastFrameInSec = (ticker) => (ticker.timestamp - ticker.elapsed) / 100;

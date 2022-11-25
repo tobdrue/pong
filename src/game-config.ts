@@ -10,7 +10,9 @@ export const PADDLE_SPEED = 2;
 export const TICKER_INTERVAL = 17;
 export const BALL_RADIUS = 10;
 
-export const BALL_SPEED = 60;
+export const BALL_SPEED = 0.1;
+
+
 export const INITIAL_OBJECTS = {
     ball: {
         position: {
