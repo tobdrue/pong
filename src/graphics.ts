@@ -5,19 +5,20 @@ import {BALL_RADIUS, canvas, context, PADDLE_HEIGHT, PADDLE_WIDTH} from "./game-
 export function drawTitle() {
     context.textAlign = 'center';
     context.font = '24px Courier New';
-    context.fillText('rxjs pong', canvas.width / 2, canvas.height / 2 - 24);
+    context.fillText('rxjs pong', canvas.width / 2, canvas.height / 2 - 34);
 }
 
 export function drawControls() {
     context.textAlign = 'center';
     context.font = '16px Courier New';
-    context.fillText('press [<] and [>] to play', canvas.width / 2, canvas.height / 2);
+    context.fillText('Player1: press [w] and [s] to play', canvas.width / 2, canvas.height / 2 - 10);
+    context.fillText('Player2: press [▲] and [▼] to play', canvas.width / 2, canvas.height / 2 + 10);
 }
 
 export function drawAuthor() {
     context.textAlign = 'center';
     context.font = '16px Courier New';
-    context.fillText('for XTIASO rxjs workshop', canvas.width / 2, canvas.height / 2 + 24);
+    context.fillText('for XTIASO rxjs workshop', canvas.width / 2, canvas.height / 2 + 34);
 }
 
 export function drawScore(score) {
