@@ -1,9 +1,9 @@
 import {distinctUntilChanged, fromEvent, merge, Observable, scan, withLatestFrom} from "rxjs";
-import {canvas, PADDLE_HEIGHT} from "./game-config";
+import {canvas, PADDLE_HEIGHT, PADDLE_SPEED} from "./game-config";
 import {ticker$} from "./app";
 
 export class Player {
-    private PADDLE_SPEED = 1;
+    /** default values can be overwritten via constructor */
     public PADDLE_KEYS = {
         up: 'ArrowUp',
         down: 'ArrowDown'
@@ -33,8 +33,10 @@ export class Player {
         .pipe(
             withLatestFrom(this.input$),
             scan((position, [ticker, direction]) => {
-
-                let next = position + direction * ticker.elapsed * this.PADDLE_SPEED;
+                const timeSinceLastFrameInSec = (ticker.timestamp - ticker.elapsed) / 100
+                let next = position + direction * timeSinceLastFrameInSec * PADDLE_SPEED;
+                console.log({timeSinceLastFrameInSec});
+                console.log(next);
                 return Math.max(Math.min(next, canvas.height - PADDLE_HEIGHT / 2), PADDLE_HEIGHT / 2);
 
             }, canvas.height / 2),

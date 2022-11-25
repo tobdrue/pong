@@ -5,6 +5,7 @@ export const context = canvas.getContext('2d')!;
 context.fillStyle = 'grey';
 export const PADDLE_WIDTH = 10;
 export const PADDLE_HEIGHT = 50;
+export const PADDLE_SPEED = 2;
 
 export const TICKER_INTERVAL = 17;
 export const BALL_RADIUS = 10;
