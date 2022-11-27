@@ -1,8 +1,5 @@
 import {
     animationFrames, combineLatest,
-    distinctUntilChanged,
-    fromEvent,
-    merge,
     sampleTime,
     scan,
     Subject,
@@ -19,7 +16,6 @@ import {
     BALL_RADIUS, BALL_SPEED,
     canvas,
     context,
-    INITIAL_OBJECTS,
     PADDLE_HEIGHT,
     PADDLE_WIDTH,
     TICKER_INTERVAL
@@ -27,7 +23,7 @@ import {
 import {Player} from "./player";
 
 type Ball = {position: {x: number, y: number}, direction: {x: number, y: number}};
-type Collisions = { paddle: boolean, floor: boolean, wall: boolean, ceiling: boolean };
+type Collisions = { paddle: boolean, floor: boolean, wall: boolean};
 
 /* Sounds */
 
@@ -56,45 +52,73 @@ const player1 = new Player('w', 's');
 const player2 = new Player('ArrowUp', 'ArrowDown');
 
 
-
-/* Ball */
-
-// TODO new calc
-function hit(paddle, ball) {
-    return ball.position.x > paddle - PADDLE_WIDTH / 2
-        && ball.position.x < paddle + PADDLE_WIDTH / 2
-        && ball.position.y > canvas.height - PADDLE_HEIGHT - BALL_RADIUS / 2;
+function paddleCollision(paddle, ball) {
+    return (ball.position.x < PADDLE_WIDTH + BALL_RADIUS / 2
+        || ball.position.x > canvas.width - PADDLE_WIDTH - BALL_RADIUS / 2)
+        &&  ball.position.y > paddle - PADDLE_HEIGHT / 2
+        && ball.position.y < paddle + PADDLE_HEIGHT / 2;
 }
+
+const INITIAL_OBJECTS = {
+    ball: {
+        position: {
+            x: canvas.width / 2,
+            y: canvas.height / 2
+        },
+        direction: {
+            x: 2,
+            y: 2
+        }
+    },
+    collisions: {
+        paddle: false,
+        floor: false,
+        wall: false,
+        brick: false
+    },
+    score: {
+        player1:0,
+        player2: 0
+    }
+};
 
 const objects$ = ticker$
     .pipe(
     withLatestFrom(player1.paddle$, player2.paddle$),
         scan((
             {ball, collisions, score}: { ball: Ball, collisions: Collisions, score: { player1: number, player2: number } },
-            [ticker, player1, player2]
+            [ticker, player1Paddle, player2Paddle]
         ) => {
             collisions = {
                 paddle: false,
                 floor: false,
-                wall: false,
-                ceiling: false
+                wall: false
             };
 
             ball.position.x = ball.position.x + ball.direction.x * timeSinceLastFrameInSec(ticker) * BALL_SPEED;
             ball.position.y = ball.position.y + ball.direction.y * timeSinceLastFrameInSec(ticker) * BALL_SPEED;
 
-            // collisions.paddle = hit(paddle, ball);
-            //
-            // if (ball.position.y < BALL_RADIUS || ball.position.x > canvas.height - BALL_RADIUS) {
-            //     ball.direction.y = -ball.direction.y;
-            //     collisions.wall = true;
-            // }
-            //
-            // collisions.ceiling = ball.position.y < BALL_RADIUS;
-            //
-            // if (collisions.paddle || collisions.ceiling) {
-            //     ball.direction.y = -ball.direction.y;
-            // }
+            // Ball hits top or bottom
+            if (ball.position.y < BALL_RADIUS || ball.position.y > canvas.height - BALL_RADIUS) {
+                ball.direction.y = -ball.direction.y;
+                collisions.wall = true;
+            }
+
+            collisions.paddle = paddleCollision(player1Paddle, ball) || paddleCollision(player2Paddle, ball);
+            if (collisions.paddle) {
+                ball.direction.x = -ball.direction.x;
+            }
+
+            // Ball hits goal
+            if (ball.position.x <= BALL_RADIUS){
+                ball.position.x = canvas.width / 2;
+                ball.position.y = canvas.height / 2;
+                score.player2++;
+            } else if(ball.position.x > canvas.width - BALL_RADIUS) {
+                ball.position.x = canvas.width / 2;
+                ball.position.y = canvas.height / 2;
+                score.player1++;
+            }
 
             return {
                 ball,
