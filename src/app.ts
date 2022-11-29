@@ -1,7 +1,7 @@
 import {
     animationFrames, combineLatest,
     sampleTime,
-    scan,
+    scan, share,
     Subject,
     withLatestFrom
 } from "rxjs";
@@ -45,7 +45,7 @@ beeper.pipe(sampleTime(100)).subscribe((key: number) => {
 
 
 /* Ticker */
-export const ticker$ = animationFrames();
+export const ticker$ = animationFrames().pipe(share());
 
 /* Player */
 const player1 = new Player('w', 's');
