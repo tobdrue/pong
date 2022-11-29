@@ -23,7 +23,7 @@ import {
 import {Player} from "./player";
 
 type Ball = {position: {x: number, y: number}, direction: {x: number, y: number}};
-type Collisions = { paddle: boolean, floor: boolean, wall: boolean};
+type Collisions = { paddle: boolean, goal: boolean, wall: boolean};
 
 /* Sounds */
 
@@ -72,7 +72,7 @@ const INITIAL_OBJECTS = {
     },
     collisions: {
         paddle: false,
-        floor: false,
+        goal: false,
         wall: false,
         brick: false
     },
@@ -91,10 +91,11 @@ const objects$ = ticker$
         ) => {
             collisions = {
                 paddle: false,
-                floor: false,
+                goal: false,
                 wall: false
             };
 
+            console.log("ball: ", timeSinceLastFrameInSec(ticker));
             ball.position.x = ball.position.x + ball.direction.x * timeSinceLastFrameInSec(ticker) * BALL_SPEED;
             ball.position.y = ball.position.y + ball.direction.y * timeSinceLastFrameInSec(ticker) * BALL_SPEED;
 
@@ -110,14 +111,15 @@ const objects$ = ticker$
             }
 
             // Ball hits goal
-            if (ball.position.x <= BALL_RADIUS){
+            if (ball.position.x <= BALL_RADIUS || ball.position.x > canvas.width - BALL_RADIUS) {
                 ball.position.x = canvas.width / 2;
                 ball.position.y = canvas.height / 2;
-                score.player2++;
-            } else if(ball.position.x > canvas.width - BALL_RADIUS) {
-                ball.position.x = canvas.width / 2;
-                ball.position.y = canvas.height / 2;
-                score.player1++;
+                collisions.goal = true;
+                if (ball.position.x <= BALL_RADIUS) {
+                    score.player2++;
+                } else if (ball.position.x > canvas.width - BALL_RADIUS) {
+                    score.player1++;
+                }
             }
 
             return {
@@ -148,12 +150,13 @@ function update([_, paddleLeft, paddleRight, objects]) {
 
     // if (objects.score.player1 === 5 || objects.score.player2 === 5) {
     //     beeper.next(52);
-    //     drawGameOver('CONGRATULATIONS');
+    //     drawGameOver('CONGRATULATIONS Player ' + objects.score.player1 === 5 ? '1' : '2');
     //     game.unsubscribe();
     // }
-    //
-    // if (objects.collisions.paddle) beeper.next(40);
-    // if (objects.collisions.wall || objects.collisions.ceiling) beeper.next(45);
+
+    if (objects.collisions.paddle) beeper.next(40);
+    if (objects.collisions.wall) beeper.next(45);
+    if (objects.collisions.goal) beeper.next(20);
 
 }
 
