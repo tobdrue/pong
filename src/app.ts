@@ -52,9 +52,13 @@ const player1 = new Player('w', 's');
 const player2 = new Player('ArrowUp', 'ArrowDown');
 
 
-function paddleCollision(paddle, ball) {
-    return (ball.position.x < PADDLE_WIDTH + BALL_RADIUS / 2
-        || ball.position.x > canvas.width - PADDLE_WIDTH - BALL_RADIUS / 2)
+function paddleCollisionPlayer1(paddle, ball) {
+    return ball.position.x < PADDLE_WIDTH + BALL_RADIUS / 2
+        &&  ball.position.y > paddle - PADDLE_HEIGHT / 2
+        && ball.position.y < paddle + PADDLE_HEIGHT / 2;
+}
+function paddleCollisionPlayer2(paddle, ball) {
+    return ball.position.x > canvas.width - PADDLE_WIDTH - BALL_RADIUS / 2
         &&  ball.position.y > paddle - PADDLE_HEIGHT / 2
         && ball.position.y < paddle + PADDLE_HEIGHT / 2;
 }
@@ -105,7 +109,7 @@ const objects$ = ticker$
                 collisions.wall = true;
             }
 
-            collisions.paddle = paddleCollision(player1Paddle, ball) || paddleCollision(player2Paddle, ball);
+            collisions.paddle = paddleCollisionPlayer1(player1Paddle, ball) || paddleCollisionPlayer2(player2Paddle, ball);
             if (collisions.paddle) {
                 ball.direction.x = -ball.direction.x;
             }
