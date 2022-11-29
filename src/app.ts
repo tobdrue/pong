@@ -7,7 +7,7 @@ import {
 } from "rxjs";
 import {
     drawAuthor, drawBall,
-    drawControls, drawField,
+    drawControls, drawField, drawGameOver,
     drawPaddle,
     drawScore,
     drawTitle
@@ -22,8 +22,8 @@ import {
 } from "./game-config";
 import {Player} from "./player";
 
-type Ball = {position: {x: number, y: number}, direction: {x: number, y: number}};
-type Collisions = { paddle: boolean, goal: boolean, wall: boolean};
+type Ball = { position: { x: number, y: number }, direction: { x: number, y: number } };
+type Collisions = { paddle: boolean, goal: boolean, wall: boolean };
 
 /* Sounds */
 
@@ -54,12 +54,13 @@ const player2 = new Player('ArrowUp', 'ArrowDown');
 
 function paddleCollisionPlayer1(paddle, ball) {
     return ball.position.x < PADDLE_WIDTH + BALL_RADIUS / 2
-        &&  ball.position.y > paddle - PADDLE_HEIGHT / 2
+        && ball.position.y > paddle - PADDLE_HEIGHT / 2
         && ball.position.y < paddle + PADDLE_HEIGHT / 2;
 }
+
 function paddleCollisionPlayer2(paddle, ball) {
     return ball.position.x > canvas.width - PADDLE_WIDTH - BALL_RADIUS / 2
-        &&  ball.position.y > paddle - PADDLE_HEIGHT / 2
+        && ball.position.y > paddle - PADDLE_HEIGHT / 2
         && ball.position.y < paddle + PADDLE_HEIGHT / 2;
 }
 
@@ -81,16 +82,20 @@ const INITIAL_OBJECTS = {
         brick: false
     },
     score: {
-        player1:0,
+        player1: 0,
         player2: 0
     }
 };
 
 const objects$ = ticker$
     .pipe(
-    withLatestFrom(player1.paddle$, player2.paddle$),
+        withLatestFrom(player1.paddle$, player2.paddle$),
         scan((
-            {ball, collisions, score}: { ball: Ball, collisions: Collisions, score: { player1: number, player2: number } },
+            {
+                ball,
+                collisions,
+                score
+            }: { ball: Ball, collisions: Collisions, score: { player1: number, player2: number } },
             [ticker, player1Paddle, player2Paddle]
         ) => {
             collisions = {
@@ -116,14 +121,15 @@ const objects$ = ticker$
 
             // Ball hits goal
             if (ball.position.x <= BALL_RADIUS || ball.position.x > canvas.width - BALL_RADIUS) {
-                ball.position.x = canvas.width / 2;
-                ball.position.y = canvas.height / 2;
-                collisions.goal = true;
                 if (ball.position.x <= BALL_RADIUS) {
                     score.player2++;
                 } else if (ball.position.x > canvas.width - BALL_RADIUS) {
                     score.player1++;
                 }
+
+                ball.position.x = canvas.width / 2;
+                ball.position.y = canvas.height / 2;
+                collisions.goal = true;
             }
 
             return {
@@ -152,11 +158,11 @@ function update([_, paddleLeft, paddleRight, objects]) {
     drawField();
 
 
-    // if (objects.score.player1 === 5 || objects.score.player2 === 5) {
-    //     beeper.next(52);
-    //     drawGameOver('CONGRATULATIONS Player ' + objects.score.player1 === 5 ? '1' : '2');
-    //     game.unsubscribe();
-    // }
+    if (objects.score.player1 === 5 || objects.score.player2 === 5) {
+        beeper.next(52);
+        drawGameOver(`CONGRATULATIONS Player ${objects.score.player1 === 5 ? '1' : '2'}`);
+        game.unsubscribe();
+    }
 
     if (objects.collisions.paddle) beeper.next(40);
     if (objects.collisions.wall) beeper.next(45);

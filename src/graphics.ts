@@ -21,6 +21,13 @@ export function drawAuthor() {
     context.fillText('for XTIASO rxjs workshop', canvas.width / 2, canvas.height / 2 + 34);
 }
 
+export function drawGameOver(text) {
+    context.clearRect(canvas.width / 4, canvas.height / 3, canvas.width / 2, canvas.height / 3);
+    context.textAlign = 'center';
+    context.font = '24px Courier New';
+    context.fillText(text, canvas.width / 2, canvas.height / 2);
+}
+
 export function drawScore(score) {
     context.textAlign = 'left';
     context.font = '16px Courier New';
