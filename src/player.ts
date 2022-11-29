@@ -33,9 +33,9 @@ export class Player {
         .pipe(
             withLatestFrom(this.input$),
             scan((position, [ticker, direction]) => {
+
+                console.log("player: " + this.PADDLE_KEYS.up, timeSinceLastFrameInSec(ticker));
                 let next = position + direction * timeSinceLastFrameInSec(ticker) * PADDLE_SPEED;
-                console.log({timeSinceLastFrameInSec});
-                console.log(next);
                 return Math.max(Math.min(next, canvas.height - PADDLE_HEIGHT / 2), PADDLE_HEIGHT / 2);
 
             }, canvas.height / 2),

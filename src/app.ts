@@ -23,7 +23,7 @@ import {
 import {Player} from "./player";
 
 type Ball = {position: {x: number, y: number}, direction: {x: number, y: number}};
-type Collisions = { paddle: boolean, floor: boolean, wall: boolean};
+type Collisions = { paddle: boolean, goal: boolean, wall: boolean};
 
 /* Sounds */
 
@@ -52,9 +52,13 @@ const player1 = new Player('w', 's');
 const player2 = new Player('ArrowUp', 'ArrowDown');
 
 
-function paddleCollision(paddle, ball) {
-    return (ball.position.x < PADDLE_WIDTH + BALL_RADIUS / 2
-        || ball.position.x > canvas.width - PADDLE_WIDTH - BALL_RADIUS / 2)
+function paddleCollisionPlayer1(paddle, ball) {
+    return ball.position.x < PADDLE_WIDTH + BALL_RADIUS / 2
+        &&  ball.position.y > paddle - PADDLE_HEIGHT / 2
+        && ball.position.y < paddle + PADDLE_HEIGHT / 2;
+}
+function paddleCollisionPlayer2(paddle, ball) {
+    return ball.position.x > canvas.width - PADDLE_WIDTH - BALL_RADIUS / 2
         &&  ball.position.y > paddle - PADDLE_HEIGHT / 2
         && ball.position.y < paddle + PADDLE_HEIGHT / 2;
 }
@@ -72,7 +76,7 @@ const INITIAL_OBJECTS = {
     },
     collisions: {
         paddle: false,
-        floor: false,
+        goal: false,
         wall: false,
         brick: false
     },
@@ -91,10 +95,11 @@ const objects$ = ticker$
         ) => {
             collisions = {
                 paddle: false,
-                floor: false,
+                goal: false,
                 wall: false
             };
 
+            console.log("ball: ", timeSinceLastFrameInSec(ticker));
             ball.position.x = ball.position.x + ball.direction.x * timeSinceLastFrameInSec(ticker) * BALL_SPEED;
             ball.position.y = ball.position.y + ball.direction.y * timeSinceLastFrameInSec(ticker) * BALL_SPEED;
 
@@ -104,20 +109,21 @@ const objects$ = ticker$
                 collisions.wall = true;
             }
 
-            collisions.paddle = paddleCollision(player1Paddle, ball) || paddleCollision(player2Paddle, ball);
+            collisions.paddle = paddleCollisionPlayer1(player1Paddle, ball) || paddleCollisionPlayer2(player2Paddle, ball);
             if (collisions.paddle) {
                 ball.direction.x = -ball.direction.x;
             }
 
             // Ball hits goal
-            if (ball.position.x <= BALL_RADIUS){
+            if (ball.position.x <= BALL_RADIUS || ball.position.x > canvas.width - BALL_RADIUS) {
                 ball.position.x = canvas.width / 2;
                 ball.position.y = canvas.height / 2;
-                score.player2++;
-            } else if(ball.position.x > canvas.width - BALL_RADIUS) {
-                ball.position.x = canvas.width / 2;
-                ball.position.y = canvas.height / 2;
-                score.player1++;
+                collisions.goal = true;
+                if (ball.position.x <= BALL_RADIUS) {
+                    score.player2++;
+                } else if (ball.position.x > canvas.width - BALL_RADIUS) {
+                    score.player1++;
+                }
             }
 
             return {
@@ -148,12 +154,13 @@ function update([_, paddleLeft, paddleRight, objects]) {
 
     // if (objects.score.player1 === 5 || objects.score.player2 === 5) {
     //     beeper.next(52);
-    //     drawGameOver('CONGRATULATIONS');
+    //     drawGameOver('CONGRATULATIONS Player ' + objects.score.player1 === 5 ? '1' : '2');
     //     game.unsubscribe();
     // }
-    //
-    // if (objects.collisions.paddle) beeper.next(40);
-    // if (objects.collisions.wall || objects.collisions.ceiling) beeper.next(45);
+
+    if (objects.collisions.paddle) beeper.next(40);
+    if (objects.collisions.wall) beeper.next(45);
+    if (objects.collisions.goal) beeper.next(20);
 
 }
 
