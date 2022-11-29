@@ -99,9 +99,9 @@ const objects$ = ticker$
                 wall: false
             };
 
-            console.log("ball: ", timeSinceLastFrameInSec(ticker));
-            ball.position.x = ball.position.x + ball.direction.x * timeSinceLastFrameInSec(ticker) * BALL_SPEED;
-            ball.position.y = ball.position.y + ball.direction.y * timeSinceLastFrameInSec(ticker) * BALL_SPEED;
+            console.log("ball: ", timeSinceLastFrameInMs(ticker));
+            ball.position.x = ball.position.x + ball.direction.x * timeSinceLastFrameInMs(ticker) * BALL_SPEED;
+            ball.position.y = ball.position.y + ball.direction.y * timeSinceLastFrameInMs(ticker) * BALL_SPEED;
 
             // Ball hits top or bottom
             if (ball.position.y < BALL_RADIUS || ball.position.y > canvas.height - BALL_RADIUS) {
@@ -169,4 +169,4 @@ const game = combineLatest([ticker$, player1.paddle$, player2.paddle$, objects$]
     .subscribe(update);
 
 
-export const timeSinceLastFrameInSec = (ticker) => (ticker.timestamp - ticker.elapsed) / 100;
+export const timeSinceLastFrameInMs = (ticker) => (ticker.timestamp - ticker.elapsed);
