@@ -1,5 +1,5 @@
 import {
-    animationFrames, combineLatest,
+    animationFrames, combineLatest, concatMap, delay, of,
     sampleTime,
     scan, share,
     Subject,
@@ -21,28 +21,17 @@ import {
     TICKER_INTERVAL
 } from "./game-config";
 import {Player} from "./player";
+import {beep} from "./beeper";
 
 type Ball = { position: { x: number, y: number }, direction: { x: number, y: number } };
 type Collisions = { paddle: boolean, goal: boolean, wall: boolean };
 
 /* Sounds */
-
-const audio = new window.AudioContext();
-const beeper = new Subject();
-beeper.pipe(sampleTime(100)).subscribe((key: number) => {
-
-    let oscillator = audio.createOscillator();
-    oscillator.connect(audio.destination);
-    oscillator.type = 'square';
-
-    // https://en.wikipedia.org/wiki/Piano_key_frequencies
-    oscillator.frequency.value = Math.pow(2, (key - 49) / 12) * 440;
-
-    oscillator.start();
-    oscillator.stop(audio.currentTime + 0.100);
-
-});
-
+const cuttingBeeper = new Subject<number>();
+cuttingBeeper.pipe(sampleTime(100)).subscribe(beep);
+const melodyBeeper = new Subject<number>();
+const beepDuration = 500;
+melodyBeeper.pipe(concatMap(x => of(x).pipe(delay(beepDuration)))).subscribe((key: number) => beep(key, beepDuration));
 
 /* Ticker */
 export const ticker$ = animationFrames().pipe(share());
@@ -159,14 +148,18 @@ function update([_, paddleLeft, paddleRight, objects]) {
 
 
     if (objects.score.player1 === 5 || objects.score.player2 === 5) {
-        beeper.next(52);
+        melodyBeeper.next(35);
+        melodyBeeper.next(38);
+        melodyBeeper.next(45);
+        melodyBeeper.next(43);
+        melodyBeeper.next(45);
         drawGameOver(`CONGRATULATIONS Player ${objects.score.player1 === 5 ? '1' : '2'}`);
         game.unsubscribe();
     }
 
-    if (objects.collisions.paddle) beeper.next(40);
-    if (objects.collisions.wall) beeper.next(45);
-    if (objects.collisions.goal) beeper.next(20);
+    if (objects.collisions.paddle) cuttingBeeper.next(40);
+    if (objects.collisions.wall) cuttingBeeper.next(45);
+    if (objects.collisions.goal) cuttingBeeper.next(20);
 
 }
 
