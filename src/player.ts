@@ -1,6 +1,6 @@
-import {distinctUntilChanged, fromEvent, merge, Observable, scan, withLatestFrom} from "rxjs";
-import {canvas, PADDLE_HEIGHT, PADDLE_SPEED} from "./game-config";
-import {ticker$, timeSinceLastFrameInMs} from "./app";
+import { distinctUntilChanged, filter, fromEvent, map, merge, Observable, scan, tap, withLatestFrom } from "rxjs";
+import { canvas, PADDLE_HEIGHT, PADDLE_SPEED } from "./game-config";
+import { ticker$, timeSinceLastFrameInMs } from "./app";
 
 export class Player {
     /** default values can be overwritten via constructor */
@@ -10,19 +10,30 @@ export class Player {
     };
 
     private input$: Observable<number> = merge(
-        fromEvent(document, 'keydown', event => {
-            switch ((event as KeyboardEvent).key) {
-                case this.PADDLE_KEYS.up:
-                    return -1;
-                case this.PADDLE_KEYS.down:
-                    return 1;
-                default:
-                    return 0;
-            }
-        })
-        , fromEvent(document, 'keyup', _ => 0)
+        fromEvent(document, 'keydown')
+        , fromEvent(document, 'keyup')
     )
-        .pipe(distinctUntilChanged());
+        .pipe(
+            filter((event: KeyboardEvent) => {
+                const key = event.key;
+                return key == this.PADDLE_KEYS.down || key == this.PADDLE_KEYS.up;
+            })
+            , map( (event: KeyboardEvent) => {
+                if (event.type === 'keyup') {
+                    return 0;
+                }
+
+                switch (event.key) {
+                    case this.PADDLE_KEYS.up:
+                        return -1;
+                    case this.PADDLE_KEYS.down:
+                        return 1;
+                    default:
+                        return 0;
+                }
+            }), tap(console.log)
+            , distinctUntilChanged()
+        );
 
     constructor(up: string, down: string) {
         this.PADDLE_KEYS.up = up;
