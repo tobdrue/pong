@@ -30,11 +30,11 @@ export function drawGameOver(text) {
     context.fillText(text, canvas.width / 2, canvas.height / 2);
 }
 
-export function drawScore(score) {
+export function drawScores(player1: number, player2: number) {
     context.textAlign = 'left';
     context.font = '16px Courier New';
-    context.fillText(score.player1, 3, 16);
-    context.fillText(score.player2, canvas.width - 13, 16);
+    context.fillText(player1.toString(), 3, 16);
+    context.fillText(player2.toString(), canvas.width - 13, 16);
 }
 
 export function drawPaddle(position, player: 1 | 2) {

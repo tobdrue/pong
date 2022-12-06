@@ -1,19 +1,28 @@
 import {
-    animationFrames, combineLatest, concatMap, delay, map, Observable, of, pairwise,
+    animationFrames,
+    BehaviorSubject,
+    combineLatest,
+    concatMap,
+    delay,
+    filter,
+    map,
+    Observable,
+    of,
+    pairwise,
     sampleTime,
-    scan, share,
-    Subject, tap,
-    withLatestFrom
+    scan,
+    share,
+    Subject,
 } from "rxjs";
 import {
     drawAuthor, drawBall,
     drawControls, drawField, drawGameOver,
     drawPaddle,
-    drawScore,
+    drawScores,
     drawTitle, gameFieldPadding
 } from "./graphics";
 import {
-    BALL_RADIUS, BALL_SPEED,
+    BALL_RADIUS,
     canvas,
     context,
     PADDLE_HEIGHT,
@@ -22,8 +31,9 @@ import {
 } from "./game-config";
 import {Paddle} from "./paddle";
 import {beep} from "./beeper";
+import {calculateNewBallPosition, initialBall} from "./ball";
 
-type Ball = { position: { x: number, y: number }, direction: { x: number, y: number } };
+export type Ball = { position: { x: number, y: number }, direction: { x: number, y: number } };
 type Collisions = { paddle: boolean, goal: boolean, wall: boolean };
 
 /* Sounds */
@@ -44,15 +54,39 @@ export type Tick = {
 export const ticker$: Observable<Tick> = animationFrames().pipe(
     pairwise(),
     map(([prevTick, thisTick]) => ({timeSinceLastFrame: thisTick.timestamp - prevTick.timestamp})),
-    tap((tick) => console.log("FPS: ", 1000 / tick.timeSinceLastFrame)),
     share()
 );
 
 /* Player */
-const player1 = new Paddle('w', 's');
-const player2 = new Paddle('ArrowUp', 'ArrowDown');
+const paddlePlayer1 = new Paddle('w', 's');
+const paddlePlayer2 = new Paddle('ArrowUp', 'ArrowDown');
 
 
+const ball$ = ticker$.pipe(scan((ball: Ball, ticker: Tick) => {
+    ball.position = calculateNewBallPosition(ball, ticker);
+    return ball;
+}, initialBall));
+
+
+/* score */
+const scorePlayer1 = new BehaviorSubject<number>(0);
+const scorePlayer1$ = scorePlayer1.asObservable();
+const scorePlayer2 = new BehaviorSubject<number>(0);
+const scorePlayer2$ = scorePlayer2.asObservable();
+
+combineLatest([scorePlayer1$, scorePlayer2$])
+    .pipe(filter(([score1, score2]) => score1 === 5 || score2 === 5))
+    .subscribe(([score1, _]) => {
+        melodyBeeper.next(35);
+        melodyBeeper.next(38);
+        melodyBeeper.next(45);
+        melodyBeeper.next(43);
+        melodyBeeper.next(45);
+        drawGameOver(`CONGRATULATIONS Player ${score1 === 5 ? '1' : '2'}`);
+        game.unsubscribe();
+    });
+
+/* collisions */
 function paddleCollisionPlayer1(paddle, ball) {
     return ball.position.x < PADDLE_WIDTH + BALL_RADIUS / 2
         && ball.position.y > paddle - PADDLE_HEIGHT / 2
@@ -64,116 +98,64 @@ function paddleCollisionPlayer2(paddle, ball) {
         && ball.position.y > paddle - PADDLE_HEIGHT / 2
         && ball.position.y < paddle + PADDLE_HEIGHT / 2;
 }
+const collisions$ = combineLatest([paddlePlayer1.paddlePositionY$, paddlePlayer2.paddlePositionY$, ball$]).pipe(
+    map((
+        [player1Paddle, player2Paddle, ball]
+    ): Collisions => {
+        const collisions = {
+            paddle: false,
+            goal: false,
+            wall: false
+        };
 
-const INITIAL_OBJECTS = {
-    ball: {
-        position: {
-            x: canvas.width / 2,
-            y: canvas.height / 2
-        },
-        direction: {
-            x: 2,
-            y: 2
+        // Ball hits top or bottom
+        if (ball.position.y < BALL_RADIUS + gameFieldPadding || ball.position.y > canvas.height - BALL_RADIUS - gameFieldPadding) {
+            ball.direction.y = -ball.direction.y;
+            collisions.wall = true;
         }
-    },
-    collisions: {
-        paddle: false,
-        goal: false,
-        wall: false,
-        brick: false
-    },
-    score: {
-        player1: 0,
-        player2: 0
-    }
-};
 
-const objects$ = ticker$
-    .pipe(
-        withLatestFrom(player1.paddle$, player2.paddle$),
-        scan((
-            {
-                ball,
-                collisions,
-                score
-            }: { ball: Ball, collisions: Collisions, score: { player1: number, player2: number } },
-            [ticker, player1Paddle, player2Paddle]
-        ) => {
-            collisions = {
-                paddle: false,
-                goal: false,
-                wall: false
-            };
+        collisions.paddle = paddleCollisionPlayer1(player1Paddle, ball) || paddleCollisionPlayer2(player2Paddle, ball);
+        if (collisions.paddle) {
+            ball.direction.x = -ball.direction.x;
+        }
 
-            ball.position.x = ball.position.x + ball.direction.x * ticker.timeSinceLastFrame * BALL_SPEED;
-            ball.position.y = ball.position.y + ball.direction.y * ticker.timeSinceLastFrame * BALL_SPEED;
-
-            // Ball hits top or bottom
-            if (ball.position.y < BALL_RADIUS + gameFieldPadding || ball.position.y > canvas.height - BALL_RADIUS - gameFieldPadding) {
-                ball.direction.y = -ball.direction.y;
-                collisions.wall = true;
+        // Ball hits goal
+        if (ball.position.x <= BALL_RADIUS || ball.position.x > canvas.width - BALL_RADIUS) {
+            if (ball.position.x <= BALL_RADIUS) {
+                scorePlayer2.next(scorePlayer2.value + 1);
+            } else if (ball.position.x > canvas.width - BALL_RADIUS) {
+                scorePlayer1.next(scorePlayer1.value + 1);
             }
 
-            collisions.paddle = paddleCollisionPlayer1(player1Paddle, ball) || paddleCollisionPlayer2(player2Paddle, ball);
-            if (collisions.paddle) {
-                ball.direction.x = -ball.direction.x;
-            }
+            ball.position.x = canvas.width / 2;
+            ball.position.y = canvas.height / 2;
+            collisions.goal = true;
+        }
 
-            // Ball hits goal
-            if (ball.position.x <= BALL_RADIUS || ball.position.x > canvas.width - BALL_RADIUS) {
-                if (ball.position.x <= BALL_RADIUS) {
-                    score.player2++;
-                } else if (ball.position.x > canvas.width - BALL_RADIUS) {
-                    score.player1++;
-                }
-
-                ball.position.x = canvas.width / 2;
-                ball.position.y = canvas.height / 2;
-                collisions.goal = true;
-            }
-
-            return {
-                ball,
-                collisions,
-                score
-            };
-
-        }, INITIAL_OBJECTS));
+        return collisions;
+    }));
 
 /* Welcome */
 drawTitle();
 drawControls();
 drawAuthor();
 
-
 /* Game */
-function update([_, paddleLeft, paddleRight, objects]) {
+function update([_, paddleLeft, paddleRight, collisions, ball, score1, score2]) {
 
     // Redraw game
     context.clearRect(0, 0, canvas.width, canvas.height);
     drawPaddle(paddleLeft, 1);
     drawPaddle(paddleRight, 2);
-    drawBall(objects.ball);
-    drawScore(objects.score);
+    drawBall(ball);
+    drawScores(score1, score2);
     drawField();
 
-
-    if (objects.score.player1 === 5 || objects.score.player2 === 5) {
-        melodyBeeper.next(35);
-        melodyBeeper.next(38);
-        melodyBeeper.next(45);
-        melodyBeeper.next(43);
-        melodyBeeper.next(45);
-        drawGameOver(`CONGRATULATIONS Player ${objects.score.player1 === 5 ? '1' : '2'}`);
-        game.unsubscribe();
-    }
-
-    if (objects.collisions.paddle) cuttingBeeper.next(40);
-    if (objects.collisions.wall) cuttingBeeper.next(45);
-    if (objects.collisions.goal) cuttingBeeper.next(20);
-
+    if (collisions.paddle) cuttingBeeper.next(40);
+    if (collisions.wall) cuttingBeeper.next(45);
+    if (collisions.goal) cuttingBeeper.next(20);
 }
 
-const game = combineLatest([ticker$, player1.paddle$, player2.paddle$, objects$])
+const game = combineLatest([ticker$, paddlePlayer1.paddlePositionY$, paddlePlayer2.paddlePositionY$, collisions$, ball$, scorePlayer1$, scorePlayer2$])
     .pipe(sampleTime(TICKER_INTERVAL))
     .subscribe(update);

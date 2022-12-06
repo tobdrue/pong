@@ -25,7 +25,7 @@ export class Paddle {
         );
 
 
-    public paddle$ = ticker$
+    public paddlePositionY$: Observable<number> = ticker$
         .pipe(withLatestFrom(this.input$),
             scan((position: number, [ticker, direction]) => {
                 return Paddle.calculateNextPaddlePosition(position, direction, ticker.timeSinceLastFrame);
