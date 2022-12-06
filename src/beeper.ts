@@ -7,8 +7,12 @@ const audio = new window.AudioContext();
  */
 export const beep = (key: number, duration = 100) =>
 {
-    let oscillator = audio.createOscillator();
-    oscillator.connect(audio.destination);
+    const gainNode = audio.createGain();
+    gainNode.gain.value = 0.01;
+    gainNode.connect(audio.destination);
+
+    const oscillator = audio.createOscillator();
+    oscillator.connect(gainNode);
     oscillator.type = 'square';
 
 // https://en.wikipedia.org/wiki/Piano_key_frequencies
