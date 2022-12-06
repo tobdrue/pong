@@ -1,6 +1,8 @@
 /* Graphics */
 import {BALL_RADIUS, canvas, context, PADDLE_HEIGHT, PADDLE_WIDTH} from "./game-config";
 
+export const gameFieldPadding = 11;
+
 
 export function drawTitle() {
     context.textAlign = 'center';
@@ -49,13 +51,14 @@ export function drawPaddle(position, player: 1 | 2) {
 
 export function drawField() {
     context.beginPath();
-    context.rect(20, 6, canvas.width - 40, 5
+    const boarderHeight = 5;
+    context.rect(20, gameFieldPadding - boarderHeight, canvas.width - 40, boarderHeight
     );
     context.fill();
     context.closePath();
 
     context.beginPath();
-    context.rect(5, canvas.height - 11, canvas.width - 10, 5
+    context.rect(5, canvas.height - gameFieldPadding, canvas.width - 10, boarderHeight
     );
     context.fill();
     context.closePath();

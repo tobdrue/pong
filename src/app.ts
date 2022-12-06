@@ -20,7 +20,7 @@ import {
     PADDLE_WIDTH,
     TICKER_INTERVAL
 } from "./game-config";
-import {Player} from "./player";
+import {Paddle} from "./paddle";
 import {beep} from "./beeper";
 
 type Ball = { position: { x: number, y: number }, direction: { x: number, y: number } };
@@ -35,7 +35,7 @@ melodyBeeper.pipe(concatMap(x => of(x).pipe(delay(beepDuration)))).subscribe((ke
 
 
 /* Ticker */
-type Tick = {
+export type Tick = {
     /**
      * Time elapsed since last update, in ms
      */
@@ -49,8 +49,8 @@ export const ticker$: Observable<Tick> = animationFrames().pipe(
 );
 
 /* Player */
-const player1 = new Player('w', 's');
-const player2 = new Player('ArrowUp', 'ArrowDown');
+const player1 = new Paddle('w', 's');
+const player2 = new Paddle('ArrowUp', 'ArrowDown');
 
 
 function paddleCollisionPlayer1(paddle, ball) {
