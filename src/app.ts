@@ -10,7 +10,7 @@ import {
     drawControls, drawField, drawGameOver,
     drawPaddle,
     drawScore,
-    drawTitle
+    drawTitle, gameFieldPadding
 } from "./graphics";
 import {
     BALL_RADIUS, BALL_SPEED,
@@ -109,7 +109,7 @@ const objects$ = ticker$
             ball.position.y = ball.position.y + ball.direction.y * ticker.timeSinceLastFrame * BALL_SPEED;
 
             // Ball hits top or bottom
-            if (ball.position.y < BALL_RADIUS || ball.position.y > canvas.height - BALL_RADIUS) {
+            if (ball.position.y < BALL_RADIUS + gameFieldPadding || ball.position.y > canvas.height - BALL_RADIUS - gameFieldPadding) {
                 ball.direction.y = -ball.direction.y;
                 collisions.wall = true;
             }
