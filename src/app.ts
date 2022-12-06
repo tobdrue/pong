@@ -1,8 +1,8 @@
 import {
-    animationFrames, combineLatest, concatMap, delay, of,
+    animationFrames, combineLatest, concatMap, delay, map, Observable, of, pairwise,
     sampleTime,
     scan, share,
-    Subject,
+    Subject, tap,
     withLatestFrom
 } from "rxjs";
 import {
@@ -33,8 +33,20 @@ const melodyBeeper = new Subject<number>();
 const beepDuration = 500;
 melodyBeeper.pipe(concatMap(x => of(x).pipe(delay(beepDuration)))).subscribe((key: number) => beep(key, beepDuration));
 
+
 /* Ticker */
-export const ticker$ = animationFrames().pipe(share());
+type Tick = {
+    /**
+     * Time elapsed since last update, in ms
+     */
+    timeSinceLastFrame: number
+};
+export const ticker$: Observable<Tick> = animationFrames().pipe(
+    pairwise(),
+    map(([prevTick, thisTick]) => ({timeSinceLastFrame: thisTick.timestamp - prevTick.timestamp})),
+    tap((tick) => console.log("FPS: ", 1000 / tick.timeSinceLastFrame)),
+    share()
+);
 
 /* Player */
 const player1 = new Player('w', 's');
@@ -93,9 +105,8 @@ const objects$ = ticker$
                 wall: false
             };
 
-            console.log("ball: ", timeSinceLastFrameInMs(ticker));
-            ball.position.x = ball.position.x + ball.direction.x * timeSinceLastFrameInMs(ticker) * BALL_SPEED;
-            ball.position.y = ball.position.y + ball.direction.y * timeSinceLastFrameInMs(ticker) * BALL_SPEED;
+            ball.position.x = ball.position.x + ball.direction.x * ticker.timeSinceLastFrame * BALL_SPEED;
+            ball.position.y = ball.position.y + ball.direction.y * ticker.timeSinceLastFrame * BALL_SPEED;
 
             // Ball hits top or bottom
             if (ball.position.y < BALL_RADIUS || ball.position.y > canvas.height - BALL_RADIUS) {
@@ -166,6 +177,3 @@ function update([_, paddleLeft, paddleRight, objects]) {
 const game = combineLatest([ticker$, player1.paddle$, player2.paddle$, objects$])
     .pipe(sampleTime(TICKER_INTERVAL))
     .subscribe(update);
-
-
-export const timeSinceLastFrameInMs = (ticker) => (ticker.timestamp - ticker.elapsed);
