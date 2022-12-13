@@ -141,7 +141,7 @@ drawControls();
 drawAuthor();
 
 /* Game */
-function update([_, paddleLeft, paddleRight, collisions, ball, score1, score2]) {
+function update([paddleLeft, paddleRight, collisions, ball, score1, score2]) {
 
     // Redraw game
     context.clearRect(0, 0, canvas.width, canvas.height);
@@ -156,6 +156,6 @@ function update([_, paddleLeft, paddleRight, collisions, ball, score1, score2]) 
     if (collisions.goal) cuttingBeeper.next(20);
 }
 
-const game = combineLatest([ticker$, paddlePlayer1.paddlePositionY$, paddlePlayer2.paddlePositionY$, collisions$, ball$, scorePlayer1$, scorePlayer2$])
+const game = combineLatest([paddlePlayer1.paddlePositionY$, paddlePlayer2.paddlePositionY$, collisions$, ball$, scorePlayer1$, scorePlayer2$])
     .pipe(sampleTime(TICKER_INTERVAL))
     .subscribe(update);
