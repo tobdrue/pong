@@ -18,7 +18,7 @@ import {
     drawControls, drawField, drawGameOver,
     drawPaddle,
     drawScores,
-    drawTitle, gameFieldPadding
+    drawTitle
 } from "./graphics";
 import {
     BALL_RADIUS,
@@ -31,11 +31,12 @@ import {
 import {Paddle} from "./paddle";
 import {beep} from "./beeper";
 import {calculateNewBallPosition, initialBall} from "./ball";
+import {areGameFieldBoardersHit, goalLeft, goalRight} from "./collisions";
 
 export type Ball = { position: { x: number, y: number }, direction: { x: number, y: number } };
 type Collisions = { paddle: boolean, goalLeft: boolean, goalRight: boolean, wall: boolean };
 
-export type scores = { player1: number, player2: number };
+export type Scores = { player1: number, player2: number };
 
 /* Sounds */
 const cuttingBeeper = new Subject<number>();
@@ -93,7 +94,7 @@ const collisions$ = combineLatest([paddlePlayer1.paddlePositionY$, paddlePlayer2
         };
 
         // Ball hits top or bottom
-        if (ball.position.y < BALL_RADIUS + gameFieldPadding || ball.position.y > canvas.height - BALL_RADIUS - gameFieldPadding) {
+        if (areGameFieldBoardersHit(ball)) {
             ball.direction.y = -ball.direction.y;
             collisions.wall = true;
         }
@@ -103,11 +104,11 @@ const collisions$ = combineLatest([paddlePlayer1.paddlePositionY$, paddlePlayer2
             ball.direction.x = -ball.direction.x;
         }
 
-        // Ball hits goal
-        if (ball.position.x <= BALL_RADIUS || ball.position.x > canvas.width - BALL_RADIUS) {
-            if (ball.position.x <= BALL_RADIUS) {
+// Ball hits goal
+        if (goalLeft(ball) || goalRight(ball)) {
+            if (goalLeft(ball)) {
                 collisions.goalLeft = true;
-            } else if (ball.position.x > canvas.width - BALL_RADIUS) {
+            } else if (goalRight(ball)) {
                 collisions.goalRight = true;
             }
 
@@ -121,8 +122,8 @@ const collisions$ = combineLatest([paddlePlayer1.paddlePositionY$, paddlePlayer2
 /* score */
 const scores$ = collisions$.pipe(scan((oldScores, collision) => ({
     player1: collision.goalRight ? oldScores.player1 + 1 : oldScores.player1,
-    player2: collision.goalLeft ? oldScores.player2 + 1  : oldScores.player2
-}), {player1: 0, player2: 0} as scores));
+    player2: collision.goalLeft ? oldScores.player2 + 1 : oldScores.player2
+}), {player1: 0, player2: 0} as Scores));
 
 scores$.pipe(filter((score) => score.player1 === 5 || score.player2 === 5))
     .subscribe((score) => {

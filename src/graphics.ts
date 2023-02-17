@@ -1,6 +1,6 @@
 /* Graphics */
 import {BALL_RADIUS, canvas, context, PADDLE_HEIGHT, PADDLE_WIDTH} from "./game-config";
-import {scores} from "./app";
+import {Scores} from "./app";
 
 export const gameFieldPadding = 11;
 
@@ -31,7 +31,7 @@ export function drawGameOver(text) {
     context.fillText(text, canvas.width / 2, canvas.height / 2);
 }
 
-export function drawScores(score: scores) {
+export function drawScores(score: Scores) {
     context.textAlign = 'left';
     context.font = '16px Courier New';
     context.fillText(score.player1.toString(), 3, 16);
