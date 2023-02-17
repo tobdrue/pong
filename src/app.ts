@@ -120,8 +120,8 @@ const collisions$ = combineLatest([paddlePlayer1.paddlePositionY$, paddlePlayer2
 
 /* score */
 const scores$ = collisions$.pipe(scan((oldScores, collision) => ({
-    player1: collision.goalRight ? oldScores.player1++ : oldScores.player1,
-    player2: collision.goalLeft ? oldScores.player2++ : oldScores.player2
+    player1: collision.goalRight ? oldScores.player1 + 1 : oldScores.player1,
+    player2: collision.goalLeft ? oldScores.player2 + 1  : oldScores.player2
 }), {player1: 0, player2: 0} as scores));
 
 scores$.pipe(filter((score) => score.player1 === 5 || score.player2 === 5))
