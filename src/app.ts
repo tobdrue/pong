@@ -1,6 +1,5 @@
 import {
     animationFrames,
-    BehaviorSubject,
     combineLatest,
     concatMap,
     delay,
@@ -34,7 +33,9 @@ import {beep} from "./beeper";
 import {calculateNewBallPosition, initialBall} from "./ball";
 
 export type Ball = { position: { x: number, y: number }, direction: { x: number, y: number } };
-type Collisions = { paddle: boolean, goal: boolean, wall: boolean };
+type Collisions = { paddle: boolean, goalLeft: boolean, goalRight: boolean, wall: boolean };
+
+export type scores = { player1: number, player2: number };
 
 /* Sounds */
 const cuttingBeeper = new Subject<number>();
@@ -67,25 +68,6 @@ const ball$ = ticker$.pipe(scan((ball: Ball, ticker: Tick) => {
     return ball;
 }, initialBall));
 
-
-/* score */
-const scorePlayer1 = new BehaviorSubject<number>(0);
-const scorePlayer1$ = scorePlayer1.asObservable();
-const scorePlayer2 = new BehaviorSubject<number>(0);
-const scorePlayer2$ = scorePlayer2.asObservable();
-
-combineLatest([scorePlayer1$, scorePlayer2$])
-    .pipe(filter(([score1, score2]) => score1 === 5 || score2 === 5))
-    .subscribe(([score1, _]) => {
-        melodyBeeper.next(35);
-        melodyBeeper.next(38);
-        melodyBeeper.next(45);
-        melodyBeeper.next(43);
-        melodyBeeper.next(45);
-        drawGameOver(`CONGRATULATIONS Player ${score1 === 5 ? '1' : '2'}`);
-        game.unsubscribe();
-    });
-
 /* collisions */
 function paddleCollisionPlayer1(paddle, ball) {
     return ball.position.x < PADDLE_WIDTH + BALL_RADIUS / 2
@@ -98,13 +80,15 @@ function paddleCollisionPlayer2(paddle, ball) {
         && ball.position.y > paddle - PADDLE_HEIGHT / 2
         && ball.position.y < paddle + PADDLE_HEIGHT / 2;
 }
+
 const collisions$ = combineLatest([paddlePlayer1.paddlePositionY$, paddlePlayer2.paddlePositionY$, ball$]).pipe(
     map((
         [player1Paddle, player2Paddle, ball]
     ): Collisions => {
         const collisions = {
             paddle: false,
-            goal: false,
+            goalLeft: false,
+            goalRight: false,
             wall: false
         };
 
@@ -122,18 +106,42 @@ const collisions$ = combineLatest([paddlePlayer1.paddlePositionY$, paddlePlayer2
         // Ball hits goal
         if (ball.position.x <= BALL_RADIUS || ball.position.x > canvas.width - BALL_RADIUS) {
             if (ball.position.x <= BALL_RADIUS) {
-                scorePlayer2.next(scorePlayer2.value + 1);
+                collisions.goalLeft = true;
             } else if (ball.position.x > canvas.width - BALL_RADIUS) {
-                scorePlayer1.next(scorePlayer1.value + 1);
+                collisions.goalRight = true;
             }
 
             ball.position.x = canvas.width / 2;
             ball.position.y = canvas.height / 2;
-            collisions.goal = true;
         }
 
         return collisions;
     }));
+
+/* score */
+const scores$ = collisions$.pipe(scan((oldScores, collision) => ({
+    player1: collision.goalRight ? oldScores.player1++ : oldScores.player1,
+    player2: collision.goalLeft ? oldScores.player2++ : oldScores.player2
+}), {player1: 0, player2: 0} as scores));
+
+scores$.pipe(filter((score) => score.player1 === 5 || score.player2 === 5))
+    .subscribe((score) => {
+        melodyBeeper.next(35);
+        melodyBeeper.next(38);
+        melodyBeeper.next(45);
+        melodyBeeper.next(43);
+        melodyBeeper.next(45);
+        drawGameOver(`CONGRATULATIONS Player ${score.player1 === 5 ? '1' : '2'}`);
+        game.unsubscribe();
+        gameSounds.unsubscribe();
+    });
+
+
+const gameSounds = collisions$.subscribe(collisions => {
+    if (collisions.paddle) cuttingBeeper.next(40);
+    if (collisions.wall) cuttingBeeper.next(45);
+    if (collisions.goalLeft || collisions.goalRight) cuttingBeeper.next(20);
+});
 
 /* Welcome */
 drawTitle();
@@ -141,21 +149,15 @@ drawControls();
 drawAuthor();
 
 /* Game */
-function update([paddleLeft, paddleRight, collisions, ball, score1, score2]) {
-
-    // Redraw game
+function update([paddleLeft, paddleRight, ball, score]) {
     context.clearRect(0, 0, canvas.width, canvas.height);
     drawPaddle(paddleLeft, 1);
     drawPaddle(paddleRight, 2);
     drawBall(ball);
-    drawScores(score1, score2);
+    drawScores(score);
     drawField();
-
-    if (collisions.paddle) cuttingBeeper.next(40);
-    if (collisions.wall) cuttingBeeper.next(45);
-    if (collisions.goal) cuttingBeeper.next(20);
 }
 
-const game = combineLatest([paddlePlayer1.paddlePositionY$, paddlePlayer2.paddlePositionY$, collisions$, ball$, scorePlayer1$, scorePlayer2$])
+const game = combineLatest([paddlePlayer1.paddlePositionY$, paddlePlayer2.paddlePositionY$, ball$, scores$])
     .pipe(sampleTime(TICKER_INTERVAL))
     .subscribe(update);
