@@ -34,7 +34,7 @@ import {calculateNewBallPosition, initialBall} from "./ball";
 import {areGameFieldBoardersHit, goalLeft, goalRight} from "./collisions";
 
 export type Ball = { position: { x: number, y: number }, direction: { x: number, y: number } };
-type Collisions = { paddle: boolean, goalLeft: boolean, goalRight: boolean, wall: boolean };
+export type Collisions = { paddle: boolean, goalLeft: boolean, goalRight: boolean, wall: boolean };
 
 export type Scores = { player1: number, player2: number };
 
@@ -64,7 +64,7 @@ const paddlePlayer1 = new Paddle('w', 's');
 const paddlePlayer2 = new Paddle('ArrowUp', 'ArrowDown');
 
 
-const ball$ = ticker$.pipe(scan((ball: Ball, ticker: Tick) => {
+const ball$: Observable<Ball> = ticker$.pipe(scan((ball: Ball, ticker: Tick) => {
     ball.position = calculateNewBallPosition(ball, ticker);
     return ball;
 }, initialBall));
@@ -82,7 +82,8 @@ function paddleCollisionPlayer2(paddle, ball) {
         && ball.position.y < paddle + PADDLE_HEIGHT / 2;
 }
 
-const collisions$ = combineLatest([paddlePlayer1.paddlePositionY$, paddlePlayer2.paddlePositionY$, ball$]).pipe(
+export const createCollisionsObservable = (playerOnePositionY$: Observable<number>, playerTwoPositionY$: Observable<number>, ball$: Observable<Ball>) =>
+    combineLatest([playerOnePositionY$, playerTwoPositionY$, ball$]).pipe(
     map((
         [player1Paddle, player2Paddle, ball]
     ): Collisions => {
@@ -118,6 +119,8 @@ const collisions$ = combineLatest([paddlePlayer1.paddlePositionY$, paddlePlayer2
 
         return collisions;
     }));
+
+const collisions$ = createCollisionsObservable(paddlePlayer1.paddlePositionY$, paddlePlayer2.paddlePositionY$, ball$);
 
 /* score */
 const scores$ = collisions$.pipe(scan((oldScores, collision) => ({
