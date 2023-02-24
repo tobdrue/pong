@@ -36,9 +36,13 @@ export type Scores = { player1: number, player2: number };
 /* Sounds */
 const cuttingBeeper = new Subject<number>();
 cuttingBeeper.pipe(sampleTime(100)).subscribe(beep);
-const melodyBeeper = new Subject<number>();
-const beepDuration = 500;
-melodyBeeper.pipe(concatMap(x => of(x).pipe(delay(beepDuration)))).subscribe((key: number) => beep(key, beepDuration));
+export type Sound = { tone: number, duration: number };
+const melodyBeeper = new Subject<Sound>();
+melodyBeeper.pipe(
+    concatMap(x => of(x)
+        .pipe(delay(x.duration))
+    )
+).subscribe((sound: Sound) => beep(sound.tone, sound.duration));
 
 
 /* Ticker */
@@ -54,15 +58,14 @@ export const ticker$: Observable<Tick> = animationFrames().pipe(
     share()
 );
 
-/* Player */
-const paddlePlayer1 = new Paddle('w', 's');
-const paddlePlayer2 = new Paddle('ArrowUp', 'ArrowDown');
-
-
 const ball$: Observable<Ball> = ticker$.pipe(scan((ball: Ball, ticker: Tick) => {
     ball.position = calculateNewBallPosition(ball, ticker);
     return ball;
 }, initialBall));
+
+/* Player */
+const paddlePlayer1 = new Paddle('w', 's');
+const paddlePlayer2 = new Paddle('ArrowUp', 'ArrowDown');
 
 export const createCollisionsObservable = (playerOnePositionY$: Observable<number>, playerTwoPositionY$: Observable<number>, ball$: Observable<Ball>) =>
     combineLatest([playerOnePositionY$, playerTwoPositionY$, ball$])
@@ -73,18 +76,26 @@ export const createCollisionsObservable = (playerOnePositionY$: Observable<numbe
 const collisions$ = createCollisionsObservable(paddlePlayer1.paddlePositionY$, paddlePlayer2.paddlePositionY$, ball$);
 
 /* score */
-const scores$ = collisions$.pipe(scan((oldScores, collision) => ({
-    player1: collision.goalRight ? oldScores.player1 + 1 : oldScores.player1,
-    player2: collision.goalLeft ? oldScores.player2 + 1 : oldScores.player2
-}), {player1: 0, player2: 0} as Scores));
+export const createScoringObservable = (collisions$: Observable<Collisions>) => collisions$.pipe(
+    scan((oldScores, collision) => ({
+        player1: collision.goalRight ? oldScores.player1 + 1 : oldScores.player1,
+        player2: collision.goalLeft ? oldScores.player2 + 1 : oldScores.player2
+    }), {player1: 0, player2: 0} as Scores));
 
-scores$.pipe(filter((score) => score.player1 === 5 || score.player2 === 5))
+const scores$ = createScoringObservable(collisions$);
+
+scores$.pipe(
+    filter((score) => score.player1 === 5 || score.player2 === 5)
+)
     .subscribe((score) => {
-        melodyBeeper.next(35);
-        melodyBeeper.next(38);
-        melodyBeeper.next(45);
-        melodyBeeper.next(43);
-        melodyBeeper.next(45);
+        const victorySound: Sound[] = [
+            {tone: 35, duration: 500},
+            {tone: 38, duration: 500},
+            {tone: 45, duration: 500},
+            {tone: 43, duration: 500},
+            {tone: 45, duration: 500}
+        ];
+        victorySound.forEach(melodyBeeper.next)
         drawGameOver(`CONGRATULATIONS Player ${score.player1 === 5 ? '1' : '2'}`);
         game.unsubscribe();
         gameSounds.unsubscribe();
