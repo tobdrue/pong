@@ -14,26 +14,21 @@ import {
     Subject,
 } from "rxjs";
 import {
-    drawAuthor, drawBall,
-    drawControls, drawField, drawGameOver,
+    drawAuthor,
+    drawBall,
+    drawControls,
+    drawField,
+    drawGameOver,
     drawPaddle,
     drawScores,
     drawTitle
 } from "./graphics";
-import {
-    BALL_RADIUS,
-    canvas,
-    context,
-    PADDLE_HEIGHT,
-    PADDLE_WIDTH,
-    TICKER_INTERVAL
-} from "./game-config";
-import {Paddle} from "./paddle";
-import {beep} from "./beeper";
-import {calculateNewBallPosition, initialBall} from "./ball";
-import {areGameFieldBoardersHit, goalLeft, goalRight} from "./collisions";
+import { canvas, context, TICKER_INTERVAL } from "./game-config";
+import { Paddle } from "./paddle";
+import { beep } from "./beeper";
+import { Ball, calculateNewBallPosition, initialBall } from "./ball";
+import { calculateCollisions } from "./collisions";
 
-export type Ball = { position: { x: number, y: number }, direction: { x: number, y: number } };
 export type Collisions = { paddle: boolean, goalLeft: boolean, goalRight: boolean, wall: boolean };
 
 export type Scores = { player1: number, player2: number };
@@ -69,56 +64,11 @@ const ball$: Observable<Ball> = ticker$.pipe(scan((ball: Ball, ticker: Tick) => 
     return ball;
 }, initialBall));
 
-/* collisions */
-function paddleCollisionPlayer1(paddle, ball) {
-    return ball.position.x < PADDLE_WIDTH + BALL_RADIUS / 2
-        && ball.position.y > paddle - PADDLE_HEIGHT / 2
-        && ball.position.y < paddle + PADDLE_HEIGHT / 2;
-}
-
-function paddleCollisionPlayer2(paddle, ball) {
-    return ball.position.x > canvas.width - PADDLE_WIDTH - BALL_RADIUS / 2
-        && ball.position.y > paddle - PADDLE_HEIGHT / 2
-        && ball.position.y < paddle + PADDLE_HEIGHT / 2;
-}
-
 export const createCollisionsObservable = (playerOnePositionY$: Observable<number>, playerTwoPositionY$: Observable<number>, ball$: Observable<Ball>) =>
-    combineLatest([playerOnePositionY$, playerTwoPositionY$, ball$]).pipe(
-    map((
-        [player1Paddle, player2Paddle, ball]
-    ): Collisions => {
-        const collisions = {
-            paddle: false,
-            goalLeft: false,
-            goalRight: false,
-            wall: false
-        };
-
-        // Ball hits top or bottom
-        if (areGameFieldBoardersHit(ball)) {
-            ball.direction.y = -ball.direction.y;
-            collisions.wall = true;
-        }
-
-        collisions.paddle = paddleCollisionPlayer1(player1Paddle, ball) || paddleCollisionPlayer2(player2Paddle, ball);
-        if (collisions.paddle) {
-            ball.direction.x = -ball.direction.x;
-        }
-
-// Ball hits goal
-        if (goalLeft(ball) || goalRight(ball)) {
-            if (goalLeft(ball)) {
-                collisions.goalLeft = true;
-            } else if (goalRight(ball)) {
-                collisions.goalRight = true;
-            }
-
-            ball.position.x = canvas.width / 2;
-            ball.position.y = canvas.height / 2;
-        }
-
-        return collisions;
-    }));
+    combineLatest([playerOnePositionY$, playerTwoPositionY$, ball$])
+        .pipe(
+            map((args) => calculateCollisions(...args))
+        );
 
 const collisions$ = createCollisionsObservable(paddlePlayer1.paddlePositionY$, paddlePlayer2.paddlePositionY$, ball$);
 
