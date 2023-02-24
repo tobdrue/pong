@@ -1,5 +1,6 @@
-import { BALL_SPEED, canvas } from "./game-config";
-import { Tick } from "./app";
+import {BALL_SPEED, canvas} from "./game-config";
+import {Tick} from "./app";
+import {Collisions} from "./collisions";
 
 export type Ball = { position: { x: number, y: number }, direction: { x: number, y: number } };
 
@@ -15,21 +16,36 @@ export function calculateNewBallPosition(ball: Ball, ticker: Tick): { x: number,
     }
 }
 
-// export function calculateNewBallAfterCollision(collision: Collisions, ball: Ball): Ball {
-//     const directionY = collision. ?  -ball.direction.y : ball.direction.y;
-//     const directionX = collision.paddle ? -ball.direction.x : ball.direction.x;
-//
-//     const positionY = collision.goalLeft || collision.goalRight ? canvas.height / 2 : ball.position.y
-//     const positionX = collision.goalLeft || collision.goalRight ? canvas.width / 2 : ball.position.x;
-//
-//     return {
-//         direction: {
-//             y: directionY,
-//             x: directionX
-//         },
-//         position: {
-//             y: positionY,
-//             x: positionX
-//         }
-//     };
-// }
+export function calculateNewBallAfterCollision(collision: Collisions, ball: Ball): Ball {
+    let directionY;
+    if (collision.borderTop) {
+        directionY = 1;
+    } else if (collision.borderBottom) {
+        directionY = -1;
+    } else {
+        directionY = ball.direction.y
+    }
+
+    let directionX;
+    if (collision.paddleLeft) {
+        directionX = 1;
+    } else if (collision.paddleRight) {
+        directionX = -1;
+    } else {
+        directionX = ball.direction.x
+    }
+
+    const positionY = collision.goalLeft || collision.goalRight ? canvas.height / 2 : ball.position.y
+    const positionX = collision.goalLeft || collision.goalRight ? canvas.width / 2 : ball.position.x;
+
+    return {
+        direction: {
+            y: directionY,
+            x: directionX
+        },
+        position: {
+            y: positionY,
+            x: positionX
+        }
+    };
+}

@@ -14,7 +14,7 @@ import {
     share,
     shareReplay, Subject,
     take,
-    takeUntil, withLatestFrom,
+    takeUntil
 } from "rxjs";
 import {
     clearCanvas,
@@ -61,6 +61,10 @@ export const ticker$: Observable<Tick> =
         )
     );
 
+const ballAfterCollision = new Subject<Ball>();
+ballAfterCollision.next(initialBall);
+
+// TODO use ballAfterCollision for clean circular dependency
 const ball$: Observable<Ball> = ticker$.pipe(
     scan((ball: Ball, ticker: Tick) => {
         ball.position = calculateNewBallPosition(ball, ticker);
@@ -91,6 +95,11 @@ collisions$.pipe(
     filter(b => !!b),
     takeUntil(gameOver$)
 ).subscribe(beep);
+
+// collisions$.pipe(
+//     takeUntil(gameOver$),
+//     withLatestFrom(ball$)
+// ).subscribe(([collision, ball]) => ballAfterCollision.next(calculateNewBallAfterCollision(collision, ball)));
 
 export type Sound = { tone: number, duration: number };
 const victorySound: Sound[] = [
