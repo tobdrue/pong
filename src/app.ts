@@ -13,7 +13,6 @@ import {
     scan,
     share,
     shareReplay,
-    Subject,
     take,
     takeUntil,
 } from "rxjs";
@@ -29,11 +28,11 @@ import {
     drawScores,
     drawTitle
 } from "./graphics";
-import { TICKER_INTERVAL } from "./game-config";
-import { Paddle } from "./paddle";
-import { beep } from "./beeper";
-import { Ball, calculateNewBallPosition, initialBall } from "./ball";
-import { createCollisionsObservable, createScoringObservable } from "./hidden";
+import {TICKER_INTERVAL} from "./game-config";
+import {Paddle} from "./paddle";
+import {beep} from "./beeper";
+import {Ball, calculateNewBallPosition, initialBall} from "./ball";
+import {createCollisionsObservable, createScoringObservable} from "./hidden";
 
 export type Scores = { player1: number, player2: number };
 
@@ -83,9 +82,12 @@ const gameOver$ = scores$.pipe(
 );
 
 /* Sounds */
-const cuttingBeeper = new Subject<number>();
-cuttingBeeper.pipe(
-    sampleTime(100),
+collisions$.pipe(
+    map(collision => {
+        if (collision.paddle) return 40;
+        if (collision.wall) return 45;
+        if (collision.goalLeft || collision.goalRight) return 20;
+    }),
     takeUntil(gameOver$)
 ).subscribe(beep);
 
@@ -99,25 +101,14 @@ const victorySound: Sound[] = [
 ];
 gameOver$.pipe(
     mergeMap(_ => from(victorySound)),
-    concatMap(x => of(x)
-        .pipe(delay(x.duration))
-    ),
-).subscribe((sound: Sound) => beep(sound.tone, 500));
+    concatMap(x => of(x).pipe(delay(x.duration))),
+).subscribe((sound: Sound) => beep(sound.tone, sound.duration));
 
 gameOver$.subscribe((score) => {
     clearScores();
     drawScores(score);
     drawGameOver(`CONGRATULATIONS Player ${score.player1 >= 5 ? '1' : '2'}`);
 });
-
-
-/** Game sounds **/
-collisions$.pipe(takeUntil(gameOver$))
-    .subscribe(collisions => {
-        if (collisions.paddle) cuttingBeeper.next(40);
-        if (collisions.wall) cuttingBeeper.next(45);
-        if (collisions.goalLeft || collisions.goalRight) cuttingBeeper.next(20);
-    });
 
 /* Welcome */
 drawTitle();
