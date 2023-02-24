@@ -53,7 +53,6 @@ const gameStart$ = fromEvent(document, 'keydown').pipe(
 
 export const ticker$: Observable<Tick> =
     gameStart$.pipe(
-        take(1),
         concatMap(() => animationFrames()
             .pipe(
                 pairwise(),
