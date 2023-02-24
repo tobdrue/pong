@@ -3,9 +3,9 @@ import {
     combineLatest,
     concatMap,
     delay,
-    filter,
+    filter, from,
     fromEvent,
-    map,
+    map, mergeMap,
     Observable,
     of,
     pairwise,
@@ -90,23 +90,21 @@ cuttingBeeper.pipe(
 ).subscribe(beep);
 
 export type Sound = { tone: number, duration: number };
-const melodyBeeper = new Subject<Sound>();
-melodyBeeper.pipe(
+const victorySound: Sound[] = [
+    {tone: 35, duration: 500},
+    {tone: 38, duration: 500},
+    {tone: 45, duration: 500},
+    {tone: 43, duration: 500},
+    {tone: 45, duration: 500}
+];
+gameOver$.pipe(
+    mergeMap(_ => from(victorySound)),
     concatMap(x => of(x)
         .pipe(delay(x.duration))
     ),
-    take(1)
 ).subscribe((sound: Sound) => beep(sound.tone, 500));
 
 gameOver$.subscribe((score) => {
-    const victorySound: Sound[] = [
-        {tone: 35, duration: 500},
-        {tone: 38, duration: 500},
-        {tone: 45, duration: 500},
-        {tone: 43, duration: 500},
-        {tone: 45, duration: 500}
-    ];
-    victorySound.forEach(sound => melodyBeeper.next(sound));
     clearScores();
     drawScores(score);
     drawGameOver(`CONGRATULATIONS Player ${score.player1 >= 5 ? '1' : '2'}`);
