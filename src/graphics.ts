@@ -90,3 +90,11 @@ export function drawBall(ball) {
     context.fill();
     context.closePath();
 }
+export function update([paddleLeft, paddleRight, ball, score]) {
+    clearCanvas();
+    drawPaddle(paddleLeft, 1);
+    drawPaddle(paddleRight, 2);
+    drawBall(ball);
+    drawScores(score);
+    drawField();
+}
