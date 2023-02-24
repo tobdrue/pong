@@ -95,8 +95,8 @@ melodyBeeper.pipe(
     concatMap(x => of(x)
         .pipe(delay(x.duration))
     ),
-    takeUntil(gameOver$)
-).subscribe((sound: Sound) => beep(sound.tone, sound.duration));
+    take(1)
+).subscribe((sound: Sound) => beep(sound.tone, 500));
 
 gameOver$.subscribe((score) => {
     const victorySound: Sound[] = [
