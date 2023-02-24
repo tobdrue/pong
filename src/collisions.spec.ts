@@ -1,6 +1,8 @@
 import '../__mocks__/client';
 import { hot } from 'jest-marbles';
-import { createCollisionsObservable, Ball, Collisions } from "./app";
+import { Ball } from "./ball";
+import { createCollisionsObservable } from "./hidden";
+import { Collisions } from "./collisions";
 
 describe("Collisions", () => {
     it('should correctly detect initial state', () => {

@@ -4,6 +4,9 @@ import {Scores} from "./app";
 
 export const gameFieldPadding = 11;
 
+export function clearCanvas() {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+}
 
 export function drawTitle() {
     context.textAlign = 'center';
@@ -14,14 +17,15 @@ export function drawTitle() {
 export function drawControls() {
     context.textAlign = 'center';
     context.font = '16px Courier New';
-    context.fillText('Player1: press [w] and [s] to play', canvas.width / 2, canvas.height / 2 - 10);
-    context.fillText('Player2: press [▲] and [▼] to play', canvas.width / 2, canvas.height / 2 + 10);
+    context.fillText('Player1: press [w] and [s] to play', canvas.width / 2, canvas.height / 2 + 20);
+    context.fillText('Player2: press [▲] and [▼] to play', canvas.width / 2, canvas.height / 2 + 44);
+    context.fillText('Press [SPACE BAR] to start', canvas.width / 2, canvas.height / 2 + 80);
 }
 
 export function drawAuthor() {
     context.textAlign = 'center';
     context.font = '16px Courier New';
-    context.fillText('for XTIASO rxjs workshop', canvas.width / 2, canvas.height / 2 + 34);
+    context.fillText('for XITASO rxjs workshop', canvas.width / 2, canvas.height / 2 - 10);
 }
 
 export function drawGameOver(text) {
@@ -34,9 +38,16 @@ export function drawGameOver(text) {
 export function drawScores(score: Scores) {
     context.textAlign = 'left';
     context.font = '16px Courier New';
+
     context.fillText(score.player1.toString(), 3, 16);
     context.fillText(score.player2.toString(), canvas.width - 13, 16);
 }
+
+export function clearScores(){
+    context.clearRect(3, 0, 16, 16);
+    context.clearRect(canvas.width - 13, 0, 10, 16);
+}
+
 
 export function drawPaddle(position, player: 1 | 2) {
     context.beginPath();

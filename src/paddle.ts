@@ -1,4 +1,15 @@
-import {distinctUntilChanged, filter, fromEvent, map, merge, Observable, scan, withLatestFrom} from "rxjs";
+import {
+    distinctUntilChanged,
+    filter,
+    fromEvent,
+    map,
+    merge,
+    Observable,
+    scan,
+    share, shareReplay,
+    startWith,
+    withLatestFrom
+} from "rxjs";
 import {canvas, PADDLE_HEIGHT, PADDLE_SPEED} from "./game-config";
 import {gameFieldPadding} from "./graphics";
 import {ticker$} from "./app";
@@ -30,7 +41,9 @@ export class Paddle {
             scan((position: number, [ticker, direction]) => {
                 return Paddle.calculateNextPaddlePosition(position, direction, ticker.timeSinceLastFrame);
             }, canvas.height / 2),
-            distinctUntilChanged());
+            startWith(canvas.height / 2),
+            distinctUntilChanged(),
+            shareReplay(1));
 
 
     /* Helpers */
