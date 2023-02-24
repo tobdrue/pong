@@ -1,9 +1,17 @@
 import { BALL_RADIUS, canvas, PADDLE_HEIGHT, PADDLE_WIDTH } from "./game-config";
-import {gameFieldPadding} from "./graphics";
-import { Ball, Collisions } from "./app";
+import { gameFieldPadding } from "./graphics";
+import { Ball } from "./ball";
 
-export function areGameFieldBoardersHit(ball: Ball) {
-    return ball.position.y < BALL_RADIUS + gameFieldPadding || ball.position.y > canvas.height - BALL_RADIUS - gameFieldPadding;
+export type Collisions = { paddle: boolean, goalLeft: boolean, goalRight: boolean, wall: boolean };
+
+export function gameFieldBoarderHits(ball: Ball): 'up' | 'down' | 'none' {
+    if (ball.position.y < (BALL_RADIUS + gameFieldPadding)) {
+        return 'up';
+    }
+    if (ball.position.y > (canvas.height - BALL_RADIUS - gameFieldPadding)) {
+        return 'down';
+    }
+    return 'none';
 }
 
 export function goalLeft(ball: Ball) {
@@ -36,14 +44,26 @@ export function calculateCollisions(player1Paddle, player2Paddle, ball): Collisi
     };
 
     // Ball hits top or bottom
-    if (areGameFieldBoardersHit(ball)) {
-        ball.direction.y = -ball.direction.y;
+    let boarderHits = gameFieldBoarderHits(ball);
+    if (boarderHits != 'none') {
         collisions.wall = true;
+
+        let ballDirectionY = Math.abs(ball.direction.x);
+        if (boarderHits === "up") {
+            ball.direction.y = ballDirectionY;
+        } else if (boarderHits === "down") {
+            ball.direction.y = -ballDirectionY;
+        }
     }
 
-    collisions.paddle = paddleCollisionPlayer1(player1Paddle, ball) || paddleCollisionPlayer2(player2Paddle, ball);
-    if (collisions.paddle) {
-        ball.direction.x = -ball.direction.x;
+    let collisionPlayer1 = paddleCollisionPlayer1(player1Paddle, ball);
+    let collisionPlayer2 = paddleCollisionPlayer2(player2Paddle, ball);
+    collisions.paddle = collisionPlayer1 || collisionPlayer2;
+    let ballDirectionX = Math.abs(ball.direction.x);
+    if (collisionPlayer1) {
+        ball.direction.x = ballDirectionX;
+    } else if (collisionPlayer2) {
+        ball.direction.x = -ballDirectionX;
     }
 
 // Ball hits goal
