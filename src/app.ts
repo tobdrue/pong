@@ -12,9 +12,9 @@ import {
     sampleTime,
     scan,
     share,
-    shareReplay,
+    shareReplay, Subject,
     take,
-    takeUntil,
+    takeUntil, withLatestFrom,
 } from "rxjs";
 import {
     clearCanvas,
@@ -84,10 +84,11 @@ const gameOver$ = scores$.pipe(
 /* Sounds */
 collisions$.pipe(
     map(collision => {
-        if (collision.paddle) return 40;
-        if (collision.wall) return 45;
+        if (collision.paddleLeft || collision.paddleRight) return 40;
+        if (collision.borderTop || collision.borderBottom) return 45;
         if (collision.goalLeft || collision.goalRight) return 20;
     }),
+    filter(b => !!b),
     takeUntil(gameOver$)
 ).subscribe(beep);
 

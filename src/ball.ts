@@ -14,3 +14,22 @@ export function calculateNewBallPosition(ball: Ball, ticker: Tick): { x: number,
         y: ball.position.y + ball.direction.y * ticker.timeSinceLastFrame * BALL_SPEED
     }
 }
+
+// export function calculateNewBallAfterCollision(collision: Collisions, ball: Ball): Ball {
+//     const directionY = collision. ?  -ball.direction.y : ball.direction.y;
+//     const directionX = collision.paddle ? -ball.direction.x : ball.direction.x;
+//
+//     const positionY = collision.goalLeft || collision.goalRight ? canvas.height / 2 : ball.position.y
+//     const positionX = collision.goalLeft || collision.goalRight ? canvas.width / 2 : ball.position.x;
+//
+//     return {
+//         direction: {
+//             y: directionY,
+//             x: directionX
+//         },
+//         position: {
+//             y: positionY,
+//             x: positionX
+//         }
+//     };
+// }
