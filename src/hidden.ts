@@ -1,6 +1,6 @@
 import { combineLatest, map, Observable, scan, share } from "rxjs";
 import { Scores } from "./app";
-import {Ball, calculateNewBallAfterCollision} from "./ball";
+import { Ball, calculateNewBallAfterCollision } from "./ball";
 import { calculateCollisions, Collisions } from "./collisions";
 
 export const createScoringObservable = (collisions$: Observable<Collisions>) =>

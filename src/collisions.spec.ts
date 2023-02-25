@@ -5,7 +5,7 @@ import { createCollisionsObservable } from "./hidden";
 import { Collisions } from "./collisions";
 
 describe("Collisions", () => {
-    it('should correctly detect initial state', () => {
+    it('should have no collisions initially', () => {
 
         const ballInMiddle: Ball = {
             position: {x: 50, y: 50},
@@ -18,7 +18,14 @@ describe("Collisions", () => {
 
         const sut = createCollisionsObservable(player1, player2, ball);
 
-        const initialCollisions: Collisions = {paddle: false, wall: false, goalLeft: false, goalRight: false};
+        const initialCollisions: Collisions = {
+            borderBottom: false,
+            borderTop: false,
+            goalLeft: false,
+            goalRight: false,
+            paddleLeft: false,
+            paddleRight: false
+        };
         const expected = hot('i-------', {i: initialCollisions});
         expect(sut).toBeObservable(expected);
     });
