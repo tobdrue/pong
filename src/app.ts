@@ -22,7 +22,7 @@ import {
     drawWelcome,
     update
 } from "./graphics";
-import {TICKER_INTERVAL, victorySound} from "./game-config";
+import {GOAL_SOUND, PADDLE_SOUND, POINTS_TO_WIN, TICKER_INTERVAL, victorySound, WALL_SOUND} from "./game-config";
 import {Paddle} from "./paddle";
 import {beep} from "./beeper";
 import {Ball, calculateNewBallPosition, initialBall} from "./ball";
@@ -77,16 +77,16 @@ const collisions$ = createCollisionsObservable(paddlePlayer1.paddlePositionY$, p
 const scores$: Observable<Scores> = createScoringObservable(collisions$);
 
 const gameOver$ = scores$.pipe(
-    filter((score) => score.player1 >= 5 || score.player2 >= 5),
+    filter((score) => score.player1 >= POINTS_TO_WIN || score.player2 >= POINTS_TO_WIN),
     take(1)
 );
 
 /* Sounds */
 collisions$.pipe(
     map(collision => {
-        if (collision.paddleLeft || collision.paddleRight) return 40;
-        if (collision.borderTop || collision.borderBottom) return 45;
-        if (collision.goalLeft || collision.goalRight) return 20;
+        if (collision.paddleLeft || collision.paddleRight) return PADDLE_SOUND;
+        if (collision.borderTop || collision.borderBottom) return WALL_SOUND;
+        if (collision.goalLeft || collision.goalRight) return GOAL_SOUND;
     }),
     filter(b => !!b),
     takeUntil(gameOver$)
@@ -104,12 +104,12 @@ collisions$.pipe(
 gameOver$.pipe(
     mergeMap(_ => from(victorySound)),
     concatMap(x => of(x).pipe(delay(x.duration))),
-).subscribe((sound: Sound) => beep(sound.tone, sound.duration));
+).subscribe(beep);
 
 gameOver$.subscribe((score) => {
     clearScores();
     drawScores(score);
-    drawGameOver(`CONGRATULATIONS Player ${score.player1 >= 5 ? '1' : '2'}`);
+    drawGameOver(`CONGRATULATIONS Player ${score.player1 >= POINTS_TO_WIN ? '1' : '2'}`);
 });
 
 gameStart$.pipe(

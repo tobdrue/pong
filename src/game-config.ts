@@ -3,6 +3,7 @@ import {Sound} from "./app";
 export const canvas = document.getElementById('stage') as HTMLCanvasElement;
 export const context = canvas.getContext('2d')!;
 
+export const POINTS_TO_WIN = 5;
 
 context.fillStyle = 'grey';
 export const PADDLE_WIDTH = 10;
@@ -22,3 +23,6 @@ export const victorySound: Sound[] = [
     {tone: 43, duration: 500},
     {tone: 45, duration: 500}
 ];
+export const PADDLE_SOUND = {tone: 40, duration: 100};
+export const WALL_SOUND = {tone: 45, duration: 100};
+export const GOAL_SOUND = {tone: 40, duration: 100};
