@@ -17,12 +17,18 @@ import {
     takeUntil,
 } from "rxjs";
 import {
-    clearScores,
-    drawGameOver, drawScores,
+    drawGameOver,
     drawWelcome,
     update
 } from "./graphics";
-import {GOAL_SOUND, PADDLE_SOUND, POINTS_TO_WIN, TICKER_INTERVAL, victorySound, WALL_SOUND} from "./game-config";
+import {
+    GOAL_SOUND,
+    PADDLE_SOUND,
+    POINTS_TO_WIN,
+    TICKER_INTERVAL,
+    victorySound,
+    WALL_SOUND
+} from "./game-config";
 import {Paddle} from "./paddle";
 import {beep} from "./beeper";
 import {Ball, calculateNewBallPosition, initialBall} from "./ball";
@@ -55,6 +61,9 @@ export const ticker$: Observable<Tick> =
             )
         )
     );
+
+// initial setting
+//ticker$.subscribe(_ => update(canvas.height / 2, canvas.height / 2, initialBall, {player1: 0, player2: 0}));
 
 const ballAfterCollision = new ReplaySubject<Ball>(1);
 ballAfterCollision.next(initialBall);
@@ -106,11 +115,7 @@ gameOver$.pipe(
     concatMap(x => of(x).pipe(delay(x.duration))),
 ).subscribe(beep);
 
-gameOver$.subscribe((score) => {
-    clearScores();
-    drawScores(score);
-    drawGameOver(`CONGRATULATIONS Player ${score.player1 >= POINTS_TO_WIN ? '1' : '2'}`);
-});
+gameOver$.subscribe(drawGameOver);
 
 gameStart$.pipe(
     concatMap(() => combineLatest([paddlePlayer1.paddlePositionY$, paddlePlayer2.paddlePositionY$, ball$, scores$])

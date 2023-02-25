@@ -1,5 +1,5 @@
 /* Graphics */
-import {BALL_RADIUS, canvas, context, PADDLE_HEIGHT, PADDLE_WIDTH} from "./game-config";
+import {BALL_RADIUS, canvas, context, PADDLE_HEIGHT, PADDLE_WIDTH, POINTS_TO_WIN} from "./game-config";
 import {Scores} from "./app";
 import {Ball} from "./ball";
 
@@ -24,14 +24,16 @@ export function update(paddleLeftY: number, paddleRightY: number, ball: Ball , s
     drawField();
 }
 
-export function drawGameOver(text) {
+export function drawGameOver(score: Scores): void {
+    clearScores();
+    drawScores(score);
     context.clearRect(canvas.width / 4, canvas.height / 3, canvas.width / 2, canvas.height / 3);
     context.textAlign = 'center';
     context.font = '24px Courier New';
-    context.fillText(text, canvas.width / 2, canvas.height / 2);
+    context.fillText(`CONGRATULATIONS Player ${score.player1 >= POINTS_TO_WIN ? '1' : '2'}`, canvas.width / 2, canvas.height / 2);
 }
 
-export function drawScores(score: Scores) {
+function drawScores(score: Scores) {
     context.textAlign = 'left';
     context.font = '16px Courier New';
 
@@ -39,7 +41,7 @@ export function drawScores(score: Scores) {
     context.fillText(score.player2.toString(), canvas.width - 13, 16);
 }
 
-export function clearScores(){
+function clearScores(){
     context.clearRect(3, 0, 16, 16);
     context.clearRect(canvas.width - 13, 0, 10, 16);
 }
