@@ -1,6 +1,6 @@
 import {BALL_RADIUS, canvas, PADDLE_HEIGHT, PADDLE_WIDTH} from "./game-config";
 import {gameFieldPadding} from "./graphics";
-import {Ball, calculateNewBallAfterCollision} from "./ball";
+import {Ball} from "./ball";
 
 export type Collisions = { paddleLeft: boolean, paddleRight: boolean, goalLeft: boolean, goalRight: boolean, borderTop: boolean, borderBottom: boolean };
 
@@ -33,7 +33,7 @@ function paddleCollisionPlayer2(paddle, ball) {
 }
 
 export function calculateCollisions(player1Paddle, player2Paddle, ball): Collisions {
-    const collisions = {
+    return {
         paddleLeft: paddleCollisionPlayer1(player1Paddle, ball),
         paddleRight: paddleCollisionPlayer2(player2Paddle, ball),
         goalLeft: goalLeft(ball),
@@ -41,8 +41,4 @@ export function calculateCollisions(player1Paddle, player2Paddle, ball): Collisi
         borderTop: topBorderHit(ball),
         borderBottom: bottomBorderHit(ball)
     };
-    const newBall = calculateNewBallAfterCollision(collisions, ball);
-    ball.direction = newBall.direction;
-    ball.position = newBall.position;
-    return collisions;
 }

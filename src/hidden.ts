@@ -1,7 +1,6 @@
-/* score */
-import { combineLatest, map, Observable, scan, share, tap } from "rxjs";
+import { combineLatest, map, Observable, scan, share } from "rxjs";
 import { Scores } from "./app";
-import { Ball } from "./ball";
+import {Ball, calculateNewBallAfterCollision} from "./ball";
 import { calculateCollisions, Collisions } from "./collisions";
 
 export const createScoringObservable = (collisions$: Observable<Collisions>) =>
@@ -18,6 +17,14 @@ export const createScoringObservable = (collisions$: Observable<Collisions>) =>
 export const createCollisionsObservable = (playerOnePositionY$: Observable<number>, playerTwoPositionY$: Observable<number>, ball$: Observable<Ball>) =>
     combineLatest([playerOnePositionY$, playerTwoPositionY$, ball$])
         .pipe(
-            map(([playerOnePositionY, playerTwoPositionY, ball]) => calculateCollisions(playerOnePositionY, playerTwoPositionY, ball)),
+            map(([playerOnePositionY, playerTwoPositionY, ball]) => {
+                const collision = calculateCollisions(playerOnePositionY, playerTwoPositionY, ball);
+                // TODO circular dependency: remove
+                const newBall = calculateNewBallAfterCollision(collision, ball);
+                ball.position = newBall.position;
+                ball.direction = newBall.direction;
+
+                return collision
+            }),
             share()
         );

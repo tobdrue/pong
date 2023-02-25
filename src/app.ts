@@ -8,13 +8,13 @@ import {
     map, mergeMap,
     Observable,
     of,
-    pairwise,
+    pairwise, ReplaySubject,
     sampleTime,
     scan,
     share,
-    shareReplay, Subject,
+    shareReplay,
     take,
-    takeUntil
+    takeUntil,
 } from "rxjs";
 import {
     clearScores,
@@ -56,10 +56,11 @@ export const ticker$: Observable<Tick> =
         )
     );
 
-const ballAfterCollision = new Subject<Ball>();
+const ballAfterCollision = new ReplaySubject<Ball>(1);
 ballAfterCollision.next(initialBall);
+const ballAfterCollision$ = ballAfterCollision.asObservable();
 
-// TODO use ballAfterCollision for clean circular dependency
+// TODO circular dependency: use ballAfterCollision
 const ball$: Observable<Ball> = ticker$.pipe(
     scan((ball: Ball, ticker: Tick) => {
         ball.position = calculateNewBallPosition(ball, ticker);
@@ -91,10 +92,15 @@ collisions$.pipe(
     takeUntil(gameOver$)
 ).subscribe(beep);
 
+// TODO circular dependency
 // collisions$.pipe(
 //     takeUntil(gameOver$),
 //     withLatestFrom(ball$)
-// ).subscribe(([collision, ball]) => ballAfterCollision.next(calculateNewBallAfterCollision(collision, ball)));
+// ).subscribe(([collision, ball]) => {
+//     let value = calculateNewBallAfterCollision(collision, ball);
+//     ballAfterCollision.next(value)
+// });
+
 gameOver$.pipe(
     mergeMap(_ => from(victorySound)),
     concatMap(x => of(x).pipe(delay(x.duration))),
@@ -113,6 +119,6 @@ gameStart$.pipe(
             takeUntil(gameOver$)
         )
     )
-).subscribe(([paddlePlayer1, paddlePlayer2, ball, scores]) => update(paddlePlayer1, paddlePlayer2, ball.position, scores));
+).subscribe((values) => update(...values));
 
 

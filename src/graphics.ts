@@ -1,6 +1,7 @@
 /* Graphics */
 import {BALL_RADIUS, canvas, context, PADDLE_HEIGHT, PADDLE_WIDTH} from "./game-config";
 import {Scores} from "./app";
+import {Ball} from "./ball";
 
 export const gameFieldPadding = 11;
 
@@ -14,7 +15,7 @@ export function drawWelcome(){
     drawAuthor();
 }
 
-export function update(paddleLeftY: number, paddleRightY: number, ball: {x: number, y: number} , score: Scores): void {
+export function update(paddleLeftY: number, paddleRightY: number, ball: Ball , score: Scores): void {
     clearCanvas();
     drawPaddle(paddleLeftY, 1);
     drawPaddle(paddleRightY, 2);
@@ -98,9 +99,9 @@ function drawField() {
     }
 }
 
-function drawBall(ball) {
+function drawBall(ball: Ball) {
     context.beginPath();
-    context.arc(ball.x, ball.y, BALL_RADIUS, 0, Math.PI * 2);
+    context.arc(ball.position.x, ball.position.y, BALL_RADIUS, 0, Math.PI * 2);
     context.fill();
     context.closePath();
 }
