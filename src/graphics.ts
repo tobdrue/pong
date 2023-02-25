@@ -4,28 +4,23 @@ import {Scores} from "./app";
 
 export const gameFieldPadding = 11;
 
-export function clearCanvas() {
+function clearCanvas() {
     context.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-export function drawTitle() {
-    context.textAlign = 'center';
-    context.font = '24px Courier New';
-    context.fillText('rxjs pong', canvas.width / 2, canvas.height / 2 - 34);
+export function drawWelcome(){
+    drawTitle();
+    drawControls();
+    drawAuthor();
 }
 
-export function drawControls() {
-    context.textAlign = 'center';
-    context.font = '16px Courier New';
-    context.fillText('Player1: press [w] and [s] to play', canvas.width / 2, canvas.height / 2 + 20);
-    context.fillText('Player2: press [▲] and [▼] to play', canvas.width / 2, canvas.height / 2 + 44);
-    context.fillText('Press [SPACE BAR] to start', canvas.width / 2, canvas.height / 2 + 80);
-}
-
-export function drawAuthor() {
-    context.textAlign = 'center';
-    context.font = '16px Courier New';
-    context.fillText('for XITASO rxjs workshop', canvas.width / 2, canvas.height / 2 - 10);
+export function update(paddleLeftY: number, paddleRightY: number, ball: {x: number, y: number} , score: Scores): void {
+    clearCanvas();
+    drawPaddle(paddleLeftY, 1);
+    drawPaddle(paddleRightY, 2);
+    drawBall(ball);
+    drawScores(score);
+    drawField();
 }
 
 export function drawGameOver(text) {
@@ -48,8 +43,27 @@ export function clearScores(){
     context.clearRect(canvas.width - 13, 0, 10, 16);
 }
 
+function drawTitle() {
+    context.textAlign = 'center';
+    context.font = '24px Courier New';
+    context.fillText('rxjs pong', canvas.width / 2, canvas.height / 2 - 34);
+}
 
-export function drawPaddle(position, player: 1 | 2) {
+function drawControls() {
+    context.textAlign = 'center';
+    context.font = '16px Courier New';
+    context.fillText('Player1: press [w] and [s] to play', canvas.width / 2, canvas.height / 2 + 20);
+    context.fillText('Player2: press [▲] and [▼] to play', canvas.width / 2, canvas.height / 2 + 44);
+    context.fillText('Press [SPACE BAR] to start', canvas.width / 2, canvas.height / 2 + 80);
+}
+
+function drawAuthor() {
+    context.textAlign = 'center';
+    context.font = '16px Courier New';
+    context.fillText('for XITASO rxjs workshop', canvas.width / 2, canvas.height / 2 - 10);
+}
+
+function drawPaddle(position, player: 1 | 2) {
     context.beginPath();
     context.rect(
         player === 1 ? 0 : context.canvas.width - PADDLE_WIDTH,
@@ -61,7 +75,7 @@ export function drawPaddle(position, player: 1 | 2) {
     context.closePath();
 }
 
-export function drawField() {
+function drawField() {
     context.beginPath();
     const boarderHeight = 5;
     context.rect(20, gameFieldPadding - boarderHeight, canvas.width - 40, boarderHeight
@@ -84,17 +98,10 @@ export function drawField() {
     }
 }
 
-export function drawBall(ball) {
+function drawBall(ball) {
     context.beginPath();
-    context.arc(ball.position.x, ball.position.y, BALL_RADIUS, 0, Math.PI * 2);
+    context.arc(ball.x, ball.y, BALL_RADIUS, 0, Math.PI * 2);
     context.fill();
     context.closePath();
 }
-export function update([paddleLeft, paddleRight, ball, score]) {
-    clearCanvas();
-    drawPaddle(paddleLeft, 1);
-    drawPaddle(paddleRight, 2);
-    drawBall(ball);
-    drawScores(score);
-    drawField();
-}
+

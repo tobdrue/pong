@@ -18,11 +18,9 @@ import {
 } from "rxjs";
 import {
     clearScores,
-    drawAuthor,
-    drawControls,
-    drawGameOver,
-    drawScores,
-    drawTitle, update
+    drawGameOver, drawScores,
+    drawWelcome,
+    update
 } from "./graphics";
 import {TICKER_INTERVAL, victorySound} from "./game-config";
 import {Paddle} from "./paddle";
@@ -30,10 +28,7 @@ import {beep} from "./beeper";
 import {Ball, calculateNewBallPosition, initialBall} from "./ball";
 import {createCollisionsObservable, createScoringObservable} from "./hidden";
 
-/* Welcome */
-drawTitle();
-drawControls();
-drawAuthor();
+drawWelcome();
 
 export type Scores = { player1: number, player2: number };
 export type Sound = { tone: number, duration: number };
@@ -118,6 +113,6 @@ gameStart$.pipe(
             takeUntil(gameOver$)
         )
     )
-).subscribe(update);
+).subscribe(([paddlePlayer1, paddlePlayer2, ball, scores]) => update(paddlePlayer1, paddlePlayer2, ball.position, scores));
 
 
