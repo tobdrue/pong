@@ -4,11 +4,6 @@ import {Scores} from "./app";
 import {Ball} from "./ball";
 
 export const gameFieldPadding = 11;
-
-function clearCanvas() {
-    context.clearRect(0, 0, canvas.width, canvas.height);
-}
-
 export function drawWelcome(){
     drawTitle();
     drawControls();
@@ -31,6 +26,10 @@ export function drawGameOver(score: Scores): void {
     context.textAlign = 'center';
     context.font = '24px Courier New';
     context.fillText(`CONGRATULATIONS Player ${score.player1 >= POINTS_TO_WIN ? '1' : '2'}`, canvas.width / 2, canvas.height / 2);
+}
+
+function clearCanvas() {
+    context.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 function drawScores(score: Scores) {
