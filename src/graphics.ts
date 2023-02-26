@@ -4,6 +4,7 @@ import {Scores} from "./app";
 import {Ball} from "./ball";
 
 export const gameFieldPadding = 11;
+
 export function drawWelcome(){
     drawTitle();
     drawControls();

@@ -9,13 +9,25 @@ export const initialBall = {
     direction: {x: 1, y: 1}
 }
 
-export function calculateNewBallPosition(ball: Ball, ticker: Tick): { x: number, y: number } {
+/**
+ *
+ * @param ball current ball
+ * @param tick elapsed time
+ * @returns the new position of the ball
+ */
+export function calculateNewBallPosition(ball: Ball, tick: Tick): { x: number, y: number } {
     return {
-        x: ball.position.x + ball.direction.x * ticker.timeSinceLastFrame * BALL_SPEED,
-        y: ball.position.y + ball.direction.y * ticker.timeSinceLastFrame * BALL_SPEED
+        x: ball.position.x + ball.direction.x * tick.timeSinceLastFrame * BALL_SPEED,
+        y: ball.position.y + ball.direction.y * tick.timeSinceLastFrame * BALL_SPEED
     }
 }
 
+/**
+ * After a collision the direction of the ball may be change
+ * and if it is a goal the position is reset
+ * @param collision collision since the last tick
+ * @param ball
+ */
 export function calculateNewBallAfterCollision(collision: Collisions, ball: Ball): Ball {
     let directionY;
     if (collision.borderTop) {

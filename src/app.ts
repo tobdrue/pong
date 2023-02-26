@@ -53,7 +53,6 @@ export type Tick = {
 };
 
 const gameStart$ = createGameStartObservable();
-
 export const ticker$: Observable<Tick> = createGameTicker(gameStart$);
 
 // initial setting

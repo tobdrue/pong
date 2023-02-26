@@ -3,6 +3,13 @@ import {gameFieldPadding} from "./graphics";
 import {Ball} from "./ball";
 
 export type Collisions = { paddleLeft: boolean, paddleRight: boolean, goalLeft: boolean, goalRight: boolean, borderTop: boolean, borderBottom: boolean };
+
+/**
+ * calculates if the ball has any collision
+ * @param player1Paddle
+ * @param player2Paddle
+ * @param ball
+ */
 export function calculateCollisions(player1Paddle, player2Paddle, ball): Collisions {
     return {
         paddleLeft: paddleCollisionPlayer1(player1Paddle, ball),

@@ -4,6 +4,7 @@ const audio = new window.AudioContext();
 
 /**
  * creates a beeping sound
+ * @param sound
  */
 export const beep = (sound: Sound) => {
     const gainNode = audio.createGain();
