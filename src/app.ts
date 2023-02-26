@@ -38,6 +38,7 @@ import {
     createGameStartObservable,
     createScoringObservable
 } from "./hidden";
+import { createGameTicker } from "./game-ticker";
 
 drawWelcome();
 
@@ -52,16 +53,7 @@ export type Tick = {
 
 const gameStart$ = createGameStartObservable();
 
-export const ticker$: Observable<Tick> =
-    gameStart$.pipe(
-        concatMap(() => animationFrames()
-            .pipe(
-                pairwise(),
-                map(([prevTick, thisTick]) => ({timeSinceLastFrame: thisTick.timestamp - prevTick.timestamp})),
-                share()
-            )
-        )
-    );
+export const ticker$: Observable<Tick> = createGameTicker(gameStart$);
 
 // initial setting
 //ticker$.subscribe(_ => update(canvas.height / 2, canvas.height / 2, initialBall, {player1: 0, player2: 0}));
