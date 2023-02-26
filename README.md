@@ -11,7 +11,7 @@ npm start
 1. game board with nothing moving (boarder, paddles, middle line, scores)
 2. move the paddles
 3. move the ball
-4. if the ball hits a wall or a paddle
+4. if the ball hits a wall or a paddle it bounces
 5. if the ball hits a goal increase score
 6. if one player has reached 5 points game is over and message is displayed
 7. if the ball has any "collision" make a specific sound

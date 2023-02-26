@@ -1,38 +1,30 @@
 import {
-    animationFrames,
     combineLatest,
     concatMap,
-    delay, distinctUntilChanged,
-    filter, from,
+    delay,
+    distinctUntilChanged,
+    filter,
+    from,
     fromEvent,
-    map, merge, mergeMap,
+    map,
+    merge,
+    mergeMap,
     Observable,
     of,
-    pairwise, pipe, ReplaySubject,
+    pipe,
+    ReplaySubject,
     sampleTime,
     scan,
-    share,
-    shareReplay, startWith,
-    take,
-    takeUntil, withLatestFrom,
+    shareReplay,
+    startWith,
+    takeUntil,
+    withLatestFrom,
 } from "rxjs";
-import {
-    drawGameOver,
-    drawWelcome,
-    update
-} from "./graphics";
-import {
-    canvas,
-    GOAL_SOUND,
-    PADDLE_SOUND,
-    POINTS_TO_WIN,
-    TICKER_INTERVAL,
-    victorySound,
-    WALL_SOUND
-} from "./game-config";
-import {calcPaddleDirection, calculateNextPaddlePosition} from "./paddle";
-import {beep} from "./beeper";
-import {Ball, calculateNewBallPosition, initialBall} from "./ball";
+import { drawGameOver, drawWelcome, update } from "./graphics";
+import { canvas, GOAL_SOUND, PADDLE_SOUND, TICKER_INTERVAL, victorySound, WALL_SOUND } from "./game-config";
+import { calcPaddleDirection, calculateNextPaddlePosition } from "./paddle";
+import { beep } from "./beeper";
+import { Ball, calculateNewBallPosition, initialBall } from "./ball";
 import {
     createCollisionsObservable,
     createGameOverObservable,
