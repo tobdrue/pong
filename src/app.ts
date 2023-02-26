@@ -32,7 +32,12 @@ import {
 import {Paddle} from "./paddle";
 import {beep} from "./beeper";
 import {Ball, calculateNewBallPosition, initialBall} from "./ball";
-import {createCollisionsObservable, createScoringObservable} from "./hidden";
+import {
+    createCollisionsObservable,
+    createGameOverObservable,
+    createGameStartObservable,
+    createScoringObservable
+} from "./hidden";
 
 drawWelcome();
 
@@ -45,11 +50,7 @@ export type Tick = {
     timeSinceLastFrame: number
 };
 
-const gameStart$ = fromEvent(document, 'keydown').pipe(
-    filter((event: KeyboardEvent) => event?.key == " "),
-    take(1),
-    share()
-);
+const gameStart$ = createGameStartObservable();
 
 export const ticker$: Observable<Tick> =
     gameStart$.pipe(
@@ -85,10 +86,7 @@ const paddlePlayer2 = new Paddle('ArrowUp', 'ArrowDown');
 const collisions$ = createCollisionsObservable(paddlePlayer1.paddlePositionY$, paddlePlayer2.paddlePositionY$, ball$);
 const scores$: Observable<Scores> = createScoringObservable(collisions$);
 
-const gameOver$ = scores$.pipe(
-    filter((score) => score.player1 >= POINTS_TO_WIN || score.player2 >= POINTS_TO_WIN),
-    take(1)
-);
+const gameOver$ = createGameOverObservable(scores$);
 
 /* Sounds */
 collisions$.pipe(
