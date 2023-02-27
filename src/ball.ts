@@ -1,6 +1,6 @@
-import {BALL_SPEED, canvas} from "./game-config";
-import {Tick} from "./app";
-import {Collisions} from "./collisions";
+import { BALL_SPEED, canvas } from "./game-config";
+import { Tick } from "./app";
+import { Collisions } from "./collisions";
 
 export type Ball = { position: { x: number, y: number }, direction: { x: number, y: number } };
 
@@ -15,10 +15,13 @@ export const initialBall = {
  * @param tick elapsed time
  * @returns the new position of the ball
  */
-export function calculateNewBallPosition(ball: Ball, tick: Tick): { x: number, y: number } {
+export function calculateNewBall(ball: Ball, tick: Tick): Ball {
     return {
-        x: ball.position.x + ball.direction.x * tick.timeSinceLastFrame * BALL_SPEED,
-        y: ball.position.y + ball.direction.y * tick.timeSinceLastFrame * BALL_SPEED
+        direction: ball.direction,
+        position: {
+            x: ball.position.x + ball.direction.x * tick.timeSinceLastFrame * BALL_SPEED,
+            y: ball.position.y + ball.direction.y * tick.timeSinceLastFrame * BALL_SPEED
+        }
     }
 }
 

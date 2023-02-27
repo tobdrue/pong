@@ -2,7 +2,6 @@ import {
     combineLatest,
     concatMap,
     delay,
-    distinctUntilChanged,
     filter,
     from,
     fromEvent,
@@ -11,25 +10,24 @@ import {
     mergeMap,
     Observable,
     of,
-    pipe,
-    ReplaySubject,
     sampleTime,
     scan,
     shareReplay,
     startWith,
+    Subject,
     takeUntil,
     withLatestFrom,
 } from "rxjs";
 import { drawGameOver, drawWelcome, update } from "./graphics";
-import { canvas, GOAL_SOUND, PADDLE_SOUND, TICKER_INTERVAL, victorySound, WALL_SOUND } from "./game-config";
-import { calcPaddleDirection, calculateNextPaddlePosition } from "./paddle";
+import { GOAL_SOUND, PADDLE_SOUND, TICKER_INTERVAL, victorySound, WALL_SOUND } from "./game-config";
 import { beep } from "./beeper";
-import { Ball, calculateNewBallPosition, initialBall } from "./ball";
+import { Ball, calculateNewBall, initialBall } from "./ball";
 import {
     createCollisionsObservable,
     createGameOverObservable,
     createGameStartObservable,
-    createScoringObservable
+    createScoringObservable,
+    paddlePositionObservable
 } from "./hidden";
 import { createGameTicker } from "./game-ticker";
 
@@ -50,15 +48,19 @@ export const ticker$: Observable<Tick> = createGameTicker(gameStart$);
 // initial setting
 //ticker$.subscribe(_ => update(canvas.height / 2, canvas.height / 2, initialBall, {player1: 0, player2: 0}));
 
-const ballAfterCollision = new ReplaySubject<Ball>(1);
-ballAfterCollision.next(initialBall);
-const ballAfterCollision$ = ballAfterCollision.asObservable();
+/* vvvvvv DELETE FOR WORKSHOP vvvvvvvvv **/
 
-// TODO circular dependency: use ballAfterCollision
+/** Subject for ball collision back-propagation */
+const ballAfterCollision = new Subject<Ball>();
+const ballAfterCollision$ = ballAfterCollision.pipe(startWith(undefined));
+
 const ball$: Observable<Ball> = ticker$.pipe(
-    scan((ball: Ball, ticker: Tick) => {
-        ball.position = calculateNewBallPosition(ball, ticker);
-        return ball;
+    withLatestFrom(ballAfterCollision$),
+    scan((ball: Ball, [ticker, backPropagatedBall]: [Tick, Ball]) => {
+        if (backPropagatedBall)
+            return backPropagatedBall;
+
+        return calculateNewBall(ball, ticker);
     }, initialBall),
     shareReplay(1),
 );
@@ -68,9 +70,9 @@ const allKeyEvents$: Observable<Event> = merge(fromEvent(document, 'keydown'), f
 const paddlePositionYPlayer1$ = paddlePositionObservable('w', 's', allKeyEvents$);
 const paddlePositionYPlayer2$ = paddlePositionObservable('ArrowUp', 'ArrowDown', allKeyEvents$);
 
+/* Game events */
 const collisions$ = createCollisionsObservable(paddlePositionYPlayer1$, paddlePositionYPlayer2$, ball$);
 const scores$: Observable<Scores> = createScoringObservable(collisions$);
-
 const gameOver$ = createGameOverObservable(scores$);
 
 /* Sounds */
@@ -84,20 +86,12 @@ collisions$.pipe(
     takeUntil(gameOver$)
 ).subscribe(beep);
 
-// TODO circular dependency
-// collisions$.pipe(
-//     takeUntil(gameOver$),
-//     withLatestFrom(ball$)
-// ).subscribe(([collision, ball]) => {
-//     let value = calculateNewBallAfterCollision(collision, ball);
-//     ballAfterCollision.next(value)
-// });
-
 gameOver$.pipe(
     mergeMap(_ => from(victorySound)),
     concatMap(x => of(x).pipe(delay(x.duration))),
 ).subscribe(beep);
 
+// Game run
 gameOver$.subscribe(drawGameOver);
 
 gameStart$.pipe(
