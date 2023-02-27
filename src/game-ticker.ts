@@ -9,8 +9,8 @@ export const createGameTicker = (gameStart$: Observable<void>) => gameStart$.pip
     concatMap(() => animationFrames()
         .pipe(
             pairwise(),
-            map(([prevTick, thisTick]) => ({timeSinceLastFrame: thisTick.timestamp - prevTick.timestamp})),
-            share()
+            map(([prevTick, thisTick]) => ({timeSinceLastFrame: thisTick.timestamp - prevTick.timestamp}))
         )
-    )
+    ),
+    share()
 );

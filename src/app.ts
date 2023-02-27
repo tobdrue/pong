@@ -2,6 +2,7 @@ import {
     combineLatest,
     concatMap,
     delay,
+    distinctUntilChanged,
     filter,
     from,
     fromEvent,
@@ -12,16 +13,17 @@ import {
     of,
     sampleTime,
     scan,
-    shareReplay,
+    share,
     startWith,
     Subject,
+    switchMap,
     takeUntil,
     withLatestFrom,
 } from "rxjs";
 import { drawGameOver, drawWelcome, update } from "./graphics";
 import { GOAL_SOUND, PADDLE_SOUND, TICKER_INTERVAL, victorySound, WALL_SOUND } from "./game-config";
 import { beep } from "./beeper";
-import { Ball, calculateNewBall, initialBall } from "./ball";
+import { Ball, calculateNewBall, calculateNewBallAfterCollision, initialBall } from "./ball";
 import {
     createCollisionsObservable,
     createGameOverObservable,
@@ -52,18 +54,21 @@ export const ticker$: Observable<Tick> = createGameTicker(gameStart$);
 
 /** Subject for ball collision back-propagation */
 const ballAfterCollision = new Subject<Ball>();
-const ballAfterCollision$ = ballAfterCollision.pipe(startWith(undefined));
+const ballAfterCollision$ = ballAfterCollision.asObservable();
 
-const ball$: Observable<Ball> = ticker$.pipe(
-    withLatestFrom(ballAfterCollision$),
-    scan((ball: Ball, [ticker, backPropagatedBall]: [Tick, Ball]) => {
-        if (backPropagatedBall)
-            return backPropagatedBall;
+function newBallObservable(ticker: Observable<Tick>, initialBall: Ball): Observable<Ball> {
+    return ticker.pipe(
+        scan((ball: Ball, tick: Tick) => {
+            return calculateNewBall(ball, tick);
+        }, initialBall)
+    );
+}
 
-        return calculateNewBall(ball, ticker);
-    }, initialBall),
-    shareReplay(1),
-);
+const ball$ = ballAfterCollision$.pipe(
+    startWith(initialBall),
+    switchMap((ball) => newBallObservable(ticker$, ball)),
+    share(),
+)
 
 /* Player */
 const allKeyEvents$: Observable<Event> = merge(fromEvent(document, 'keydown'), fromEvent(document, 'keyup'));
@@ -72,6 +77,18 @@ const paddlePositionYPlayer2$ = paddlePositionObservable('ArrowUp', 'ArrowDown',
 
 /* Game events */
 const collisions$ = createCollisionsObservable(paddlePositionYPlayer1$, paddlePositionYPlayer2$, ball$);
+
+collisions$.pipe(
+    distinctUntilChanged(areCollisionsEqual),
+    withLatestFrom(ball$)
+).subscribe(([collision, ball]) => {
+    let values: boolean[] = Object.values(collision);
+    const noCollisions = values.every(value => !value);
+    if (!noCollisions) {
+        const newBall = calculateNewBallAfterCollision(collision, ball);
+        ballAfterCollision.next(newBall);
+    }
+})
 const scores$: Observable<Scores> = createScoringObservable(collisions$);
 const gameOver$ = createGameOverObservable(scores$);
 
