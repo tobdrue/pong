@@ -32,6 +32,7 @@ import {
     paddlePositionObservable
 } from "./hidden";
 import { createGameTicker } from "./game-ticker";
+import { areCollisionsEqual } from "./collisions";
 
 drawWelcome();
 
