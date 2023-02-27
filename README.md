@@ -12,6 +12,7 @@ npm start
 2. move the paddles
 3. move the ball
 4. if the ball hits a wall or a paddle it bounces
+5. if the ball hits a goal reset the ball to the center
 5. if the ball hits a goal increase score
 6. if one player has reached 5 points game is over and message is displayed
 7. if the ball has any "collision" make a specific sound
