@@ -64,41 +64,9 @@ const ball$: Observable<Ball> = ticker$.pipe(
 );
 
 /* Player */
-const keyDownToDirection = (up: string, down: string) => pipe(
-    filter((event: KeyboardEvent) => event.key == up || event.key == down),
-    map((event: KeyboardEvent) => calcPaddleDirection(event, up, down)),
-    distinctUntilChanged()
-);
-
-const nextPaddlePosition = () => pipe(
-    scan((position: number, [ticker, direction]) => {
-        return calculateNextPaddlePosition(position, direction, ticker.timeSinceLastFrame);
-    }, canvas.height / 2),
-    startWith(canvas.height / 2),
-    distinctUntilChanged(),
-    shareReplay(1)
-);
-
-const paddleKeyEvents$: Observable<Event> = merge(
-    fromEvent(document, 'keydown')
-    , fromEvent(document, 'keyup'));
-
-const player1Up = 'w';
-const player1Down = 's';
-const currentPaddleDirectionPlayer1: Observable<number> = paddleKeyEvents$.pipe(keyDownToDirection(player1Up, player1Down));
-const paddlePositionYPlayer1$: Observable<number> = ticker$
-    .pipe(withLatestFrom(currentPaddleDirectionPlayer1),
-        nextPaddlePosition()
-        );
-
-
-const player2Up = 'ArrowUp';
-const player2Down = 'ArrowDown';
-const currentPaddleDirectionPlayer2: Observable<number> = paddleKeyEvents$.pipe(keyDownToDirection(player2Up, player2Down));
-const paddlePositionYPlayer2$: Observable<number> = ticker$
-    .pipe(withLatestFrom(currentPaddleDirectionPlayer2),
-        nextPaddlePosition()
-    );
+const allKeyEvents$: Observable<Event> = merge(fromEvent(document, 'keydown'), fromEvent(document, 'keyup'));
+const paddlePositionYPlayer1$ = paddlePositionObservable('w', 's', allKeyEvents$);
+const paddlePositionYPlayer2$ = paddlePositionObservable('ArrowUp', 'ArrowDown', allKeyEvents$);
 
 const collisions$ = createCollisionsObservable(paddlePositionYPlayer1$, paddlePositionYPlayer2$, ball$);
 const scores$: Observable<Scores> = createScoringObservable(collisions$);

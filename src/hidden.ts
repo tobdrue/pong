@@ -1,8 +1,24 @@
-import { combineLatest, filter, fromEvent, map, Observable, scan, share, take } from "rxjs";
-import { Scores } from "./app";
+import {
+    combineLatest,
+    distinctUntilChanged,
+    filter,
+    fromEvent,
+    map,
+    Observable,
+    pipe,
+    scan,
+    share,
+    shareReplay,
+    startWith,
+    take,
+    UnaryFunction,
+    withLatestFrom
+} from "rxjs";
+import { Scores, Tick, ticker$ } from "./app";
 import { Ball, calculateNewBallAfterCollision } from "./ball";
 import { calculateCollisions, Collisions } from "./collisions";
-import { POINTS_TO_WIN } from "./game-config";
+import { canvas, POINTS_TO_WIN } from "./game-config";
+import { calcPaddleDirection, calculateNextPaddlePosition } from "./paddle";
 
 export const createScoringObservable = (collisions$: Observable<Collisions>) =>
     collisions$.pipe(
@@ -28,6 +44,32 @@ export const createCollisionsObservable = (playerOnePositionY$: Observable<numbe
             }),
             share()
         );
+
+type PaddlePositionPipe = () => UnaryFunction<Observable<readonly [Tick, number]>, Observable<number>>;
+
+export function paddlePositionObservable(keyUpEvent: string, keyDownEvent: string, keyEvents$: Observable<Event>) {
+    const currentPaddleDirectionPlayer1: Observable<number> = keyEvents$.pipe(
+        pipe(
+            filter((event: KeyboardEvent) => event.key == keyUpEvent || event.key == keyDownEvent),
+            map((event: KeyboardEvent) => calcPaddleDirection(event, keyUpEvent, keyDownEvent)),
+            distinctUntilChanged()
+        )
+    );
+    const nextPaddlePosition: PaddlePositionPipe = () =>
+        pipe(
+            scan((position: number, [ticker, direction]: [Tick, number]) => {
+                return calculateNextPaddlePosition(position, direction, ticker.timeSinceLastFrame);
+            }, canvas.height / 2),
+            startWith(canvas.height / 2),
+            distinctUntilChanged(),
+            shareReplay(1)
+        );
+    return ticker$
+        .pipe(
+            withLatestFrom(currentPaddleDirectionPlayer1),
+            nextPaddlePosition()
+        );
+}
 
 export const createGameStartObservable = () => fromEvent(document, 'keydown').pipe(
     filter((event: KeyboardEvent) => event?.key == " "),
