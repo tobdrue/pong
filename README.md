@@ -13,12 +13,12 @@ npm start
 3. move the ball
 4. if the ball hits a wall or a paddle it bounces
 5. if the ball hits a goal reset the ball to the center
-5. if the ball hits a goal increase score
-6. if one player has reached 5 points game is over and message is displayed
-7. if the ball has any "collision" make a specific sound
-8. if game over play a victory melody
-9. display a ball shadow
-10. make the game restartable
+6. if the ball hits a goal increase score
+7. if one player has reached 5 points game is over and message is displayed
+8. if the ball has any "collision" make a specific sound
+9. if game over play a victory melody
+10. display a ball shadow
+11. make the game restartable
 
 ![Everything is a stream](https://camo.githubusercontent.com/e581baffb3db3e4f749350326af32de8d5ba4363/687474703a2f2f692e696d6775722e636f6d2f4149696d5138432e6a7067)
 
